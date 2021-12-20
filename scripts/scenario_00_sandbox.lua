@@ -77,7 +77,6 @@ function jamArea(startx, starty, endx, endy, faction)
   end
 end
 
-
 function jamSectors(ss, es)
   local sx,sy = sectorToXY(ss)
   es = es or ss
@@ -86,69 +85,89 @@ function jamSectors(ss, es)
 end
 
 
-jumping_state = "wait_for_dock"
-function handleJumpCarrier(jc, source_x, source_y, dest_x, dest_y, jumping_message)
-    if jumping_state == "wait_for_dock" then
-        if player:isDocked(jc) then
-            jc:orderFlyTowardsBlind(dest_x, dest_y)
-            jc:sendCommsMessage(player, jumping_message)
-            jumping_state = "wait_for_jump"
-        end
-    elseif jumping_state == "wait_for_jump" then
-        if distance(jc, dest_x, dest_y) < 10000 then
-            -- We check for the player 1 tick later, as it can take a game tick for the player position to update as well.
-            jumping_state = "check_for_player"
-        end
-    elseif jumping_state == "check_for_player" then
-        jumping_state = "wait_for_dock"
-        if distance(player, dest_x, dest_y) < 10000 then
-            -- Good, continue.
-            jump_finished = true
-            return true
-        else
-            -- fly back
-            jc:orderFlyTowardsBlind(source_x, source_y)
-            jc:sendCommsMessage(
-                player,
-                _("JumpCarrier-incCall", [[Looks like the docking couplers detached prematurely.
 
-This happens sometimes. I am on my way so we can try again.]])
-            )
-        end
+
+jumpConfig = {
+  jc2 = {
+    destinations = {
+      ["Home"] = { 2000, 2000 },
+      ["Zulu Nine-Niner"] = { sectorToXY("Z99") },
+      ["Alpha Sector"] =  { sectorToXY("A0") },
+    },
+    current_location = "Home",
+    current_destination = nil,
+    jumping_state = "wait_for_dock",
+    jump_finished = false,
+  }
+}
+
+function handleJumpCarrier(jc, configKey, source_x, source_y, dest_x, dest_y)
+  local config = jumpConfig[configKey]
+  if config.jumping_state == "wait_for_dock" then
+    if player:isDocked(jc) then
+      jc:orderFlyTowardsBlind(dest_x, dest_y)
+      config.jumping_state = "wait_for_jump"
     end
-    return false
+  elseif config.jumping_state == "wait_for_jump" then
+    if distance(jc, dest_x, dest_y) < 10000 then
+      -- We check for the player 1 tick later, as it can take a game tick for the player position to update as well.
+      config.jumping_state = "check_for_player"
+    end
+  elseif config.jumping_state == "check_for_player" then
+    config.jumping_state = "wait_for_dock"
+    if distance(player, dest_x, dest_y) < 10000 then
+      -- Good, continue.
+      config.jump_finished = true
+      return true
+    else
+      -- fly back
+      jc:orderFlyTowardsBlind(source_x, source_y)
+      jc:sendCommsMessage(
+          player,
+          _("JumpCarrier-incCall", [[Looks like the docking couplers detached prematurely.\n\nThis happens sometimes. I am on my way so we can try again.]])
+      )
+    end
+  end
+  return false
 end
 
-jump_finished = false
-function update_transport_state()
-  if transport_state == "home" then
-    source_x, source_y = 2000, 2000
-    dest_x, dest_y = sectorToXY("Z99")
-    jumping_message = "Heading to Z99"
-  elseif transport_state == "Z" then
-    source_x, source_y = sectorToXY("Z99")
-    dest_x, dest_y = 2000, 2000
-    jumping_message = "Heading home"
+--***** TODO
+-- Please undock to finish the jump
+-- Please dock with us to start the jump
+-- Cancel current jump
+
+function jc2Comms() -- I wish there were a way to make this generic instead of ship-specific
+  local config = jumpConfig["jc2"]
+  setCommsMessage("Where to?")
+  for dest, c in pairs(config.destinations) do
+    addCommsReply(dest, function()
+        config.current_destination = dest
+      end
+    )
   end
-  
-  if player:isDocked(jc2) then
-    if not jump_finished then -- Tried to combine these but lua doesn't do short-circuit boolean eval?
-      if handleJumpCarrier(jc2, source_x, source_y, dest_x, dest_y, jumping_message) then
-        if transport_state == "home" then
-          transport_state = "Z"
-        elseif transport_state == "Z" then 
-          transport_state = "home"
-        end
+end
+
+function updateJumpCarrierState(jc, configKey)
+  local config = jumpConfig[configKey]
+  if not player:isDocked(jc) then
+    config.jump_finished = false
+  else
+    if config.current_destination == nil then return end
+    if not config.jump_finished then
+      local src = config.destinations[config.current_location]
+      local dest = config.destinations[config.current_destination]
+
+      if handleJumpCarrier(jc, configKey, src[1], src[2], dest[1], dest[2]) then
+        config.current_location = config.current_destination
+        config.current_destination = nil
       end
     end
-  else
-    jump_finished = false
   end
 end
 
 -- Test sectorToXY()
 function init()
-  player = PlayerSpaceship():setFaction("Human Navy"):setTemplate("Atlantis"):setPosition(sectorToXY("F5"))
+  player = PlayerSpaceship():setFaction("Human Navy"):setTemplate("Atlantis"):setPosition(sectorToXY("F5")):setRotation(315)
   player:setLongRangeRadarRange(80000)
   player:setWarpDrive(true)
   player:setWarpSpeed(5000)
@@ -159,8 +178,9 @@ function init()
   Planet():setPosition(56194, 26778):setPlanetRadius(5000):setPlanetSurfaceTexture("planets/planet-1.png"):setPlanetCloudTexture("planets/clouds-1.png"):setPlanetAtmosphereTexture("planets/atmosphere.png"):setPlanetAtmosphereColor(0.2, 0.2, 1.0)
   Planet():setPosition(-20595, 60535):setPlanetRadius(40000):setPlanetSurfaceTexture("planets/planet-1.png"):setPlanetCloudTexture("planets/clouds-1.png"):setPlanetAtmosphereTexture("planets/atmosphere.png"):setPlanetAtmosphereColor(0.2, 0.2, 1.0)
 
-  jc2 = CpuShip():setFaction("Human Navy"):setTemplate("Jump Carrier"):setCallSign("JC-2"):setScanned(true):setPosition(1000, 1000):orderIdle()
+  jc2 = CpuShip():setFaction("Human Navy"):setTemplate("Jump Carrier"):setCallSign("JC-2"):setScanned(true):setPosition(300, 300):orderIdle()
   jc2:setJumpDriveRange(5000, 1000 * 50000)
+  jc2:setCommsFunction(jc2Comms)
   transport_state = "home"
 
 end
@@ -173,7 +193,7 @@ function update(delta)
     victory("The authors of history")
   end
 
-  update_transport_state();
+  updateJumpCarrierState(jc2, "jc2");
 
   --When Omega station is destroyed, call it a victory for the Human Navy.
   -- if not enemy_station:isValid() then
