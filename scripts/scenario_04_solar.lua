@@ -97,57 +97,57 @@ function init()
    -- TODO: Decide which bodies should have :setPlanetAtmosphereTexture("planets/atmosphere.png")
    
    -- Place the Sun approximately 1 AU to the Left, so that we can start near Earth.
-   sun = Planet():setCallSign("Sol"):setPosition(0-solScaleAU(1), 0):setPlanetRadius(solScale(696000000)):setPlanetAtmosphereTexture("planets/star-1.png"):setPlanetAtmosphereColor(0.8, 0.6, 0.1)
-   sun_x, sun_y = sun:getPosition()
+   local  sun = Planet():setCallSign("Sol"):setPosition(0-solScaleAU(1), 0):setPlanetRadius(solScale(696000000)):setPlanetAtmosphereTexture("planets/star-1.png"):setPlanetAtmosphereColor(0.8, 0.6, 0.1)
+   local sun_x, sun_y = sun:getPosition()
 
-   mercury = Planet():setCallSign("Mercury"):setPosition(sun_x+solScaleAU(0.387098), 0):setPlanetRadius(solScale(2440000)):setPlanetSurfaceTexture("planets/Mercury/mercury-1.png"):setPlanetAtmosphereColor(0.2, 0.1, 0.0):setAxialRotationTime(dayToSec(176)):setOrbit(sun, dayToSec(87.9691))
+   local mercury = Planet():setCallSign("Mercury"):setPosition(sun_x+solScaleAU(0.387098), 0):setPlanetRadius(solScale(2440000)):setPlanetSurfaceTexture("planets/Mercury/mercury-1.png"):setPlanetAtmosphereColor(0.2, 0.1, 0.0):setAxialRotationTime(dayToSec(176)):setOrbit(sun, dayToSec(87.9691))
 
-   venus = Planet():setCallSign("Venus"):setPosition(sun_x+solScaleAU(0.723332), 0):setPlanetRadius(solScale(6051800)):setPlanetSurfaceTexture("planets/Venus/venus-1.png"):setPlanetAtmosphereTexture("planets/atmosphere.png"):setPlanetAtmosphereColor(0.64, 0.32, 0.11):setAxialRotationTime(0-dayToSec(116.75)):setOrbit(sun, dayToSec(87.9691))
+   local venus = Planet():setCallSign("Venus"):setPosition(sun_x+solScaleAU(0.723332), 0):setPlanetRadius(solScale(6051800)):setPlanetSurfaceTexture("planets/Venus/venus-1.png"):setPlanetAtmosphereTexture("planets/atmosphere.png"):setPlanetAtmosphereColor(0.64, 0.32, 0.11):setAxialRotationTime(0-dayToSec(116.75)):setOrbit(sun, dayToSec(87.9691))
 
    -- FIXME: Player ship shouldn't start ON Earth, but needs recalculation of positions
    -- KLUDGE: Ensure player ship starts Left of Earth by displacing Earth by half distance to Moon (+1)
-   earth = Planet():setCallSign("Earth"):setPosition(sun_x+solScaleAU(1)+(solScale(384399000)/16)+1, 0):setPlanetRadius(solScale(6378137)):setPlanetSurfaceTexture("planets/Earth/earth-1.png"):setPlanetCloudTexture("planets/clouds-2.png"):setPlanetAtmosphereTexture("planets/atmosphere.png"):setPlanetAtmosphereColor(0.2, 0.2, 0.5):setAxialRotationTime(dayToSec(1)):setOrbit(sun, yearToSec(1))
+   local earth = Planet():setCallSign("Earth"):setPosition(sun_x+solScaleAU(1)+(solScale(384399000)/16)+1, 0):setPlanetRadius(solScale(6378137)):setPlanetSurfaceTexture("planets/Earth/earth-1.png"):setPlanetCloudTexture("planets/clouds-2.png"):setPlanetAtmosphereTexture("planets/atmosphere.png"):setPlanetAtmosphereColor(0.2, 0.2, 0.5):setAxialRotationTime(dayToSec(1)):setOrbit(sun, yearToSec(1))
 
-   earth_x, earth_y = earth:getPosition()
+   local earth_x, earth_y = earth:getPosition()
    -- The lunar distance value was chosen from exprimental testing, ensuring Moon appears at LEO.
    -- FIXME: The Moon is tidally locked, but not facing the correct direction
-   moon = Planet():setCallSign("Luna"):setPosition(earth_x-(solScale(384399000)/8), 0):setPlanetRadius(solScale(1738100)):setPlanetSurfaceTexture("planets/Moon/luna-1.png"):setPlanetAtmosphereColor(0.1, 0.1, 0.1):setAxialRotationTime(dayToSec(28)):setOrbit(earth, dayToSec(28))
+   local moon = Planet():setCallSign("Luna"):setPosition(earth_x-(solScale(384399000)/8), 0):setPlanetRadius(solScale(1738100)):setPlanetSurfaceTexture("planets/Moon/luna-1.png"):setPlanetAtmosphereColor(0.1, 0.1, 0.1):setAxialRotationTime(dayToSec(28)):setOrbit(earth, dayToSec(28))
 
    -- IDEA: Phobos and Deimos could be asteroids? They are so small...
-   mars_distance = sun_x+solScaleAU(1.523679)
-   mars = Planet():setCallSign("Mars"):setPosition(mars_distance, 0):setPlanetRadius(solScale(3396200)):setPlanetSurfaceTexture("planets/Mars/mars-1.png"):setPlanetAtmosphereTexture("planets/atmosphere.png"):setPlanetAtmosphereColor(0.6, 0.4, 0.3):setAxialRotationTime(dayToSec(1.02749125)):setOrbit(sun, dayToSec(686.980))
-   phobos = Planet():setCallSign("Phobos"):setPosition(mars_distance-solScale(9376000), 0):setPlanetRadius(1126.67):setPlanetSurfaceTexture("planets/Mars/phobos-1.png"):setPlanetAtmosphereColor(0.12, 0.1, 0.1):setAxialRotationTime(dayToSec(0.31891023)):setOrbit(mars, dayToSec(0.31891023))
-   deimos = Planet():setCallSign("Deimos"):setPosition(mars_distance-solScale(23463200), 0):setPlanetRadius(620):setPlanetSurfaceTexture("planets/Mars/deimos-1.png"):setPlanetAtmosphereColor(0.12, 0.1, 0.1):setAxialRotationTime(dayToSec(1.263)):setOrbit(mars, dayToSec(1.263))
+   local mars_distance = sun_x+solScaleAU(1.523679)
+   local mars = Planet():setCallSign("Mars"):setPosition(mars_distance, 0):setPlanetRadius(solScale(3396200)):setPlanetSurfaceTexture("planets/Mars/mars-1.png"):setPlanetAtmosphereTexture("planets/atmosphere.png"):setPlanetAtmosphereColor(0.6, 0.4, 0.3):setAxialRotationTime(dayToSec(1.02749125)):setOrbit(sun, dayToSec(686.980))
+   local phobos = Planet():setCallSign("Phobos"):setPosition(mars_distance-solScale(9376000), 0):setPlanetRadius(1126.67):setPlanetSurfaceTexture("planets/Mars/phobos-1.png"):setPlanetAtmosphereColor(0.12, 0.1, 0.1):setAxialRotationTime(dayToSec(0.31891023)):setOrbit(mars, dayToSec(0.31891023))
+   local deimos = Planet():setCallSign("Deimos"):setPosition(mars_distance-solScale(23463200), 0):setPlanetRadius(620):setPlanetSurfaceTexture("planets/Mars/deimos-1.png"):setPlanetAtmosphereColor(0.12, 0.1, 0.1):setAxialRotationTime(dayToSec(1.263)):setOrbit(mars, dayToSec(1.263))
 
    -- TODO: Add asteroids to the Belt
-   vesta = Planet():setCallSign("4 Vesta"):setPosition(sun_x+solScaleAU(2.36179), 0):setPlanetRadius(solScale(262700)):setPlanetSurfaceTexture("planets/Belt/vesta-1.png"):setPlanetAtmosphereColor(0.1, 0.1, 0.1):setAxialRotationTime(dayToSec(0.222583)):setOrbit(sun, yearToSec(3.63))
-   ceres = Planet():setCallSign("Ceres"):setPosition(sun_x+solScaleAU(2.77), 0):setPlanetRadius(solScale(469730)):setPlanetSurfaceTexture("planets/Belt/ceres-1.png"):setPlanetAtmosphereColor(0.1, 0.1, 0.1):setAxialRotationTime(dayToSec(0.3780904166)):setOrbit(sun, dayToSec(1680))
+   local vesta = Planet():setCallSign("4 Vesta"):setPosition(sun_x+solScaleAU(2.36179), 0):setPlanetRadius(solScale(262700)):setPlanetSurfaceTexture("planets/Belt/vesta-1.png"):setPlanetAtmosphereColor(0.1, 0.1, 0.1):setAxialRotationTime(dayToSec(0.222583)):setOrbit(sun, yearToSec(3.63))
+   local ceres = Planet():setCallSign("Ceres"):setPosition(sun_x+solScaleAU(2.77), 0):setPlanetRadius(solScale(469730)):setPlanetSurfaceTexture("planets/Belt/ceres-1.png"):setPlanetAtmosphereColor(0.1, 0.1, 0.1):setAxialRotationTime(dayToSec(0.3780904166)):setOrbit(sun, dayToSec(1680))
 
-   jupiter_distance = sun_x+solScaleAU(5.2044)
-   jupiter = Planet():setCallSign("Jupiter"):setPosition(jupiter_distance, 0):setPlanetRadius(solScale(71492000)):setPlanetSurfaceTexture("planets/Jupiter/jupiter-1.png"):setPlanetAtmosphereColor(0.3, 0.1, 0.01):setAxialRotationTime(yearToSec(11.862)):setOrbit(sun, yearToSec(11.862))
+   local jupiter_distance = sun_x+solScaleAU(5.2044)
+   local jupiter = Planet():setCallSign("Jupiter"):setPosition(jupiter_distance, 0):setPlanetRadius(solScale(71492000)):setPlanetSurfaceTexture("planets/Jupiter/jupiter-1.png"):setPlanetAtmosphereColor(0.3, 0.1, 0.01):setAxialRotationTime(yearToSec(11.862)):setOrbit(sun, yearToSec(11.862))
    -- NOTE: These moons may be too close to each other at their closest
    -- These values were chosen because Jupiter begins to glitch out beyond Callisto
-   iomoon = Planet():setCallSign("Io"):setPosition(jupiter_distance-(solScale(421700000)/4), 0):setPlanetRadius(solScale(1821600)):setPlanetSurfaceTexture("planets/Jupiter/io-1.png"):setPlanetAtmosphereTexture("planets/atmosphere.png"):setPlanetAtmosphereColor(0.5, 0.4, 0.1):setAxialRotationTime(dayToSec(1.769137786)):setOrbit(jupiter, dayToSec(1.769137786))
-   europa = Planet():setCallSign("Europa"):setPosition(jupiter_distance-(solScale(670900000)/5), 0):setPlanetRadius(solScale(1560800)):setPlanetSurfaceTexture("planets/Jupiter/europa-1.png"):setPlanetAtmosphereColor(0.3, 0.2, 0.1):setAxialRotationTime(dayToSec(3.551181)):setOrbit(jupiter, dayToSec(3.551181))
-   ganymede = Planet():setCallSign("Ganymede"):setPosition(jupiter_distance-(solScale(1070400000)/6), 0):setPlanetRadius(solScale(2634100)):setPlanetSurfaceTexture("planets/Jupiter/ganymede-1.png"):setPlanetAtmosphereColor(0.1, 0.1, 0.1):setAxialRotationTime(dayToSec(7.15455296)):setOrbit(jupiter, dayToSec(7.15455296))
-   callisto = Planet():setCallSign("Callisto"):setPosition(jupiter_distance-(solScale(1882700000)/7), 0):setPlanetRadius(solScale(2410300)):setPlanetSurfaceTexture("planets/Jupiter/callisto-1.png"):setPlanetAtmosphereColor(0.075, 0.075, 0.075):setAxialRotationTime(dayToSec(16.6890184)):setOrbit(jupiter, dayToSec(16.6890184))
+   local iomoon = Planet():setCallSign("Io"):setPosition(jupiter_distance-(solScale(421700000)/4), 0):setPlanetRadius(solScale(1821600)):setPlanetSurfaceTexture("planets/Jupiter/io-1.png"):setPlanetAtmosphereTexture("planets/atmosphere.png"):setPlanetAtmosphereColor(0.5, 0.4, 0.1):setAxialRotationTime(dayToSec(1.769137786)):setOrbit(jupiter, dayToSec(1.769137786))
+   local europa = Planet():setCallSign("Europa"):setPosition(jupiter_distance-(solScale(670900000)/5), 0):setPlanetRadius(solScale(1560800)):setPlanetSurfaceTexture("planets/Jupiter/europa-1.png"):setPlanetAtmosphereColor(0.3, 0.2, 0.1):setAxialRotationTime(dayToSec(3.551181)):setOrbit(jupiter, dayToSec(3.551181))
+   local ganymede = Planet():setCallSign("Ganymede"):setPosition(jupiter_distance-(solScale(1070400000)/6), 0):setPlanetRadius(solScale(2634100)):setPlanetSurfaceTexture("planets/Jupiter/ganymede-1.png"):setPlanetAtmosphereColor(0.1, 0.1, 0.1):setAxialRotationTime(dayToSec(7.15455296)):setOrbit(jupiter, dayToSec(7.15455296))
+   local callisto = Planet():setCallSign("Callisto"):setPosition(jupiter_distance-(solScale(1882700000)/7), 0):setPlanetRadius(solScale(2410300)):setPlanetSurfaceTexture("planets/Jupiter/callisto-1.png"):setPlanetAtmosphereColor(0.075, 0.075, 0.075):setAxialRotationTime(dayToSec(16.6890184)):setOrbit(jupiter, dayToSec(16.6890184))
 
    -- TODO: How To Rings ???
-   saturn_distance = sun_x+solScaleAU(9.5826)
-   saturn = Planet():setCallSign("Saturn"):setPosition(saturn_distance, 0):setPlanetRadius(solScale(71492000)):setPlanetSurfaceTexture("planets/Saturn/saturn-1.png"):setPlanetAtmosphereColor(0.5, 0.3, 0.01):setAxialRotationTime(dayToSec(0.43930416)):setOrbit(sun, yearToSec(29.4571))
+   local saturn_distance = sun_x+solScaleAU(9.5826)
+   local saturn = Planet():setCallSign("Saturn"):setPosition(saturn_distance, 0):setPlanetRadius(solScale(71492000)):setPlanetSurfaceTexture("planets/Saturn/saturn-1.png"):setPlanetAtmosphereColor(0.5, 0.3, 0.01):setAxialRotationTime(dayToSec(0.43930416)):setOrbit(sun, yearToSec(29.4571))
    -- NOTE: These orbital values were chosen for no good reason, I just like them.
    -- Atmo colours to taste.
-   mimas = Planet():setCallSign("Mimas"):setPosition(saturn_distance-(solScale(185539000)/2), 0):setPlanetRadius(solScale(198200)):setPlanetSurfaceTexture("planets/Saturn/mimas-1.png"):setPlanetAtmosphereColor(0.2, 0.2, 0.12):setAxialRotationTime(dayToSec(0.942421959)):setOrbit(saturn, dayToSec(0.942421959))
-   enceladus = Planet():setCallSign("Enceladus"):setPosition(saturn_distance-(solScale(237948000)/2), 0):setPlanetRadius(solScale(252100)):setPlanetSurfaceTexture("planets/Saturn/enceladus-1.png"):setPlanetAtmosphereColor(0.3, 0.4, 0.5):setAxialRotationTime(dayToSec(1.370218)):setOrbit(saturn, dayToSec(1.370218))
-   tethys = Planet():setCallSign("Tethys"):setPosition(saturn_distance-(solScale(294619000)/2), 0):setPlanetRadius(solScale(531100)):setPlanetSurfaceTexture("planets/Saturn/tethys-1.png"):setPlanetAtmosphereColor(0.12, 0.12, 0.1):setAxialRotationTime(dayToSec(1.887802)):setOrbit(saturn, dayToSec(1.887802))
-   dione = Planet():setCallSign("Dione"):setPosition(saturn_distance-(solScale(377396000)/2), 0):setPlanetRadius(solScale(561400)):setPlanetSurfaceTexture("planets/Saturn/dione-1.png"):setPlanetAtmosphereColor(0.1, 0.1, 0.09):setAxialRotationTime(dayToSec(2.736915)):setOrbit(saturn, dayToSec(2.736915))
-   rhea = Planet():setCallSign("Rhea"):setPosition(saturn_distance-(solScale(527108000)/2.2), 0):setPlanetRadius(solScale(763800)):setPlanetSurfaceTexture("planets/Saturn/rhea-1.png"):setPlanetAtmosphereColor(0.1, 0.08, 0.0):setAxialRotationTime(dayToSec(4.518212)):setOrbit(saturn, dayToSec(4.518212))
-   titan = Planet():setCallSign("Titan"):setPosition(saturn_distance-(solScale(1221870000)/4), 0):setPlanetRadius(solScale(2574730)):setPlanetSurfaceTexture("planets/Saturn/titan-1.png"):setPlanetAtmosphereTexture("planets/atmosphere.png"):setPlanetAtmosphereColor(0.6, 0.5, 0.2):setAxialRotationTime(dayToSec(15.945)):setOrbit(saturn, dayToSec(15.945))
+   local mimas = Planet():setCallSign("Mimas"):setPosition(saturn_distance-(solScale(185539000)/2), 0):setPlanetRadius(solScale(198200)):setPlanetSurfaceTexture("planets/Saturn/mimas-1.png"):setPlanetAtmosphereColor(0.2, 0.2, 0.12):setAxialRotationTime(dayToSec(0.942421959)):setOrbit(saturn, dayToSec(0.942421959))
+   local enceladus = Planet():setCallSign("Enceladus"):setPosition(saturn_distance-(solScale(237948000)/2), 0):setPlanetRadius(solScale(252100)):setPlanetSurfaceTexture("planets/Saturn/enceladus-1.png"):setPlanetAtmosphereColor(0.3, 0.4, 0.5):setAxialRotationTime(dayToSec(1.370218)):setOrbit(saturn, dayToSec(1.370218))
+   local tethys = Planet():setCallSign("Tethys"):setPosition(saturn_distance-(solScale(294619000)/2), 0):setPlanetRadius(solScale(531100)):setPlanetSurfaceTexture("planets/Saturn/tethys-1.png"):setPlanetAtmosphereColor(0.12, 0.12, 0.1):setAxialRotationTime(dayToSec(1.887802)):setOrbit(saturn, dayToSec(1.887802))
+   local dione = Planet():setCallSign("Dione"):setPosition(saturn_distance-(solScale(377396000)/2), 0):setPlanetRadius(solScale(561400)):setPlanetSurfaceTexture("planets/Saturn/dione-1.png"):setPlanetAtmosphereColor(0.1, 0.1, 0.09):setAxialRotationTime(dayToSec(2.736915)):setOrbit(saturn, dayToSec(2.736915))
+   local rhea = Planet():setCallSign("Rhea"):setPosition(saturn_distance-(solScale(527108000)/2.2), 0):setPlanetRadius(solScale(763800)):setPlanetSurfaceTexture("planets/Saturn/rhea-1.png"):setPlanetAtmosphereColor(0.1, 0.08, 0.0):setAxialRotationTime(dayToSec(4.518212)):setOrbit(saturn, dayToSec(4.518212))
+   local titan = Planet():setCallSign("Titan"):setPosition(saturn_distance-(solScale(1221870000)/4), 0):setPlanetRadius(solScale(2574730)):setPlanetSurfaceTexture("planets/Saturn/titan-1.png"):setPlanetAtmosphereTexture("planets/atmosphere.png"):setPlanetAtmosphereColor(0.6, 0.5, 0.2):setAxialRotationTime(dayToSec(15.945)):setOrbit(saturn, dayToSec(15.945))
 
-   uranus = Planet():setCallSign("Uranus"):setPosition(sun_x+solScaleAU(19.19126), 0):setPlanetRadius(solScale(25559000)):setPlanetSurfaceTexture("planets/Uranus/uranus-1.png"):setPlanetAtmosphereTexture("planets/atmosphere.png"):setPlanetAtmosphereColor(0.2, 0.2, 0.3):setAxialRotationTime(0-dayToSec(0.71832)):setOrbit(sun, yearToSec(84.0205))
+   local uranus = Planet():setCallSign("Uranus"):setPosition(sun_x+solScaleAU(19.19126), 0):setPlanetRadius(solScale(25559000)):setPlanetSurfaceTexture("planets/Uranus/uranus-1.png"):setPlanetAtmosphereTexture("planets/atmosphere.png"):setPlanetAtmosphereColor(0.2, 0.2, 0.3):setAxialRotationTime(0-dayToSec(0.71832)):setOrbit(sun, yearToSec(84.0205))
 
    -- Atmosphere colour chosen from texture map
-   neptune = Planet():setCallSign("Neptune"):setPosition(sun_x+solScaleAU(30.07), 0):setPlanetRadius(solScale(24622000)):setPlanetSurfaceTexture("planets/Neptune/neptune-1.png"):setPlanetAtmosphereTexture("planets/atmosphere.png"):setPlanetAtmosphereColor(0.376, 0.529, 0.925):setAxialRotationTime(dayToSec(0.67125)):setOrbit(sun, yearToSec(164.8))
+   local neptune = Planet():setCallSign("Neptune"):setPosition(sun_x+solScaleAU(30.07), 0):setPlanetRadius(solScale(24622000)):setPlanetSurfaceTexture("planets/Neptune/neptune-1.png"):setPlanetAtmosphereTexture("planets/atmosphere.png"):setPlanetAtmosphereColor(0.376, 0.529, 0.925):setAxialRotationTime(dayToSec(0.67125)):setOrbit(sun, yearToSec(164.8))
 
    jumpConfig = {
       ["JC-2"] = {
@@ -157,16 +157,16 @@ function init()
       }
    }
 
-   -- destination_bodies = {
-   --    sun, mercury, venus, earth, moon, mars, phobos, deimos, vesta, ceres, jupiter,
-   --    iomoon, europa, ganymede, callisto, saturn, mimas, enceladus,
-   --    tethys, dione, rhea, titan, uranus, neptune
-   -- }
-
    destination_bodies = {
-      sun, mercury, venus, earth, moon, mars, jupiter,
-      saturn, uranus, neptune
+      sun, mercury, venus, earth, moon, mars, phobos, deimos, vesta, ceres, jupiter,
+      iomoon, europa, ganymede, callisto, saturn, mimas, enceladus,
+      tethys, dione, rhea, titan, uranus, neptune
    }
+
+   -- destination_bodies = {
+   --    sun, mercury, venus, earth, moon, mars, jupiter,
+   --    saturn, uranus, neptune
+   -- }
 
    -- Initial player ship helps with my debug workflow
    player = PlayerSpaceship():setFaction("Human Navy"):setTemplate("Atlantis"):setPosition(sectorToXY("F5")):setRotation(315)
