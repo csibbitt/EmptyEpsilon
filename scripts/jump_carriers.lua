@@ -35,11 +35,10 @@
 -- Jump to waypoints
 -- Localization
 
-
 function handleJumpCarrier(jc, source_x, source_y, dest_x, dest_y)
   local config = jumpConfig[jc:getCallSign()]
   if config.jumping_state == nil then
-    if player:isDocked(jc) then
+    if config.user:isDocked(jc) then
       jc:orderFlyTowardsBlind(dest_x, dest_y)
       config.jumping_state = "wait_for_jump"
     end
@@ -52,13 +51,13 @@ function handleJumpCarrier(jc, source_x, source_y, dest_x, dest_y)
     config.jumping_state = nil
     config.current_location = config.current_destination
     config.current_destination = nil
-    if distance(player, dest_x, dest_y) < 10000 then
+    if distance(config.user, dest_x, dest_y) < 10000 then
       return true
     else
       -- fly back if the player didn't land with us (undocked before jump)
       jc:orderFlyTowardsBlind(source_x, source_y)
       jc:sendCommsMessage(
-          player,
+          config.user,
           _("JumpCarrier-incCall", "Looks like the docking couplers detached prematurely.\n\nThis happens sometimes. I am on my way so we can try again.")
       )
     end
@@ -71,7 +70,7 @@ function jcComms(comms_source, comms_target)
   local config = jumpConfig[comms_target:getCallSign()]
   if not comms_source:isDocked(comms_target) then
     local destinations = ""
-    for dest, c in pairs(config.destinations) do
+    for dest, c in pairs(config.destinations) do --FIX?: Order is not guaranteed
       destinations = destinations ..dest .."\n"
     end
     setCommsMessage("Please dock with us if you'd like to jump to any of our destinations: \n\n"..destinations)
@@ -82,9 +81,10 @@ function jcComms(comms_source, comms_target)
     return
   end
   setCommsMessage("Where to?")
-  for dest, c in pairs(config.destinations) do
+  for dest, c in pairs(config.destinations) do --FIX?: Order is not guaranteed
     addCommsReply(dest, function()
         config.current_destination = dest
+        config.user = comms_source
         setCommsMessage("Roger that, proceeding to "..getSectorName(c[1], c[2]))
       end
     )
