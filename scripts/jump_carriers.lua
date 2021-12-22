@@ -12,7 +12,7 @@
 --        destinations = {
 --          ["Home"] = { 2000, 2000 },  -- NOTE: The first jump needs to start near the first listed destination
 --          ["Zulu Nine-Niner"] = { sectorToXY("Z99") },
---          ["Alpha Sector"] =  { sectorToXY("A0") },
+--          ["Alpha Sector"] =  { sectorToXY("A0") }
 --        }
 --      }
 --    }
@@ -39,7 +39,8 @@ function handleJumpCarrier(jc, source_x, source_y, dest_x, dest_y)
   local config = jumpConfig[jc:getCallSign()]
   if config.jumping_state == nil then
     if config.user:isDocked(jc) then
-      jc:orderFlyTowardsBlind(dest_x, dest_y)
+      -- jc:orderFlyTowardsBlind(dest_x, dest_y)  -- setPosition is more stable for very long jumps
+      jc:setPosition(dest_x, dest_y)
       config.jumping_state = "wait_for_jump"
     end
   elseif config.jumping_state == "wait_for_jump" then
@@ -55,7 +56,8 @@ function handleJumpCarrier(jc, source_x, source_y, dest_x, dest_y)
       return true
     else
       -- fly back if the player didn't land with us (undocked before jump)
-      jc:orderFlyTowardsBlind(source_x, source_y)
+      -- jc:orderFlyTowardsBlind(source_x, source_y)   -- setPosition is more stable for very long jumps
+      jc:setPosition(source_x, source_y)
       jc:sendCommsMessage(
           config.user,
           _("JumpCarrier-incCall", "Looks like the docking couplers detached prematurely.\n\nThis happens sometimes. I am on my way so we can try again.")
