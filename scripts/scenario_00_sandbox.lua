@@ -3,92 +3,11 @@
 -- Type: Development
 
 require("utils.lua")
-
--- Deny warp/jump in a large area
--- TODO allow setting onTakingDamage and onDestruction callbacks that the jammer
---   class has. One idea is replace on Destruction so it's invincible
--- TODO generalize this to other entities and add a density control
-function jamArea(startx, starty, endx, endy, faction)
-  startx = startx or 0
-  starty = starty or 0
-  endx = endx or startx
-  endy = endy or starty
-  local morex = false
-  local morey = false
-  faction = faction or "Independent"
-
-  for cury = starty, endy, 20000 do
-    if cury < endy then morey = true else morey = false end
-    for curx = startx, endx, 20000 do
-      if curx < endx then morex = true else morex = false end
-      -- Core Set
-      WarpJammer():setFaction(faction):setPosition(curx + 6865, cury + 6870)
-      WarpJammer():setFaction(faction):setPosition(curx + 13120, cury + 6870)
-      WarpJammer():setFaction(faction):setPosition(curx + 6870, cury + 13120)
-      WarpJammer():setFaction(faction):setPosition(curx + 13120, cury + 13120)
-      -- right
-      if morex then
-        WarpJammer():setFaction(faction):setPosition(curx + 20000, cury + 6870)
-        WarpJammer():setFaction(faction):setPosition(curx + 20000, cury + 13120)
-      end
-      -- bottom
-      if morey then
-        WarpJammer():setFaction(faction):setPosition(curx + 6870, cury + 20000)
-        WarpJammer():setFaction(faction):setPosition(curx + 13120, cury + 20000)
-      end
-      -- bottom right corner
-      if morex and morey then WarpJammer():setFaction(faction):setPosition(curx + 20000, cury + 20000) end
-    end
-  end
-end
-
-
-function jamArea(startx, starty, endx, endy, faction)
-  startx = startx or 0
-  starty = starty or 0
-  endx = endx or startx
-  endy = endy or starty
-  local morex = false
-  local morey = false
-  faction = faction or "Independent"
-
-  for cury = starty, endy, 20000 do
-    if cury < endy then morey = true else morey = false end
-    for curx = startx, endx, 20000 do
-      if curx < endx then morex = true else morex = false end
-      -- Core Set
-      WarpJammer():setFaction(faction):setPosition(curx + 6865, cury + 6870)
-      WarpJammer():setFaction(faction):setPosition(curx + 13120, cury + 6870)
-      WarpJammer():setFaction(faction):setPosition(curx + 6870, cury + 13120)
-      WarpJammer():setFaction(faction):setPosition(curx + 13120, cury + 13120)
-      -- right
-      if morex then
-        WarpJammer():setFaction(faction):setPosition(curx + 20000, cury + 6870)
-        WarpJammer():setFaction(faction):setPosition(curx + 20000, cury + 13120)
-      end
-      -- bottom
-      if morey then
-        WarpJammer():setFaction(faction):setPosition(curx + 6870, cury + 20000)
-        WarpJammer():setFaction(faction):setPosition(curx + 13120, cury + 20000)
-      end
-      -- bottom right corner
-      if morex and morey then WarpJammer():setFaction(faction):setPosition(curx + 20000, cury + 20000) end
-    end
-  end
-end
-
-function jamSectors(ss, es)
-  local sx,sy = sectorToXY(ss)
-  es = es or ss
-  local ex,ey = sectorToXY(es)
-  jamArea(sx, sy, ex, ey)
-end
-
-
-
+require("jump_carrier.lua")
+require("jam_area.lua")
 
 jumpConfig = {
-  jc2 = {
+  ["JC-2"] = {
     destinations = {
       ["Home"] = { 2000, 2000 },
       ["Zulu Nine-Niner"] = { sectorToXY("Z99") },
@@ -97,75 +16,10 @@ jumpConfig = {
     current_location = "Home",
     current_destination = nil,
     jumping_state = "wait_for_dock",
-    jump_finished = false,
+    jump_finished = true,
   }
 }
 
-function handleJumpCarrier(jc, configKey, source_x, source_y, dest_x, dest_y)
-  local config = jumpConfig[configKey]
-  if config.jumping_state == "wait_for_dock" then
-    if player:isDocked(jc) then
-      jc:orderFlyTowardsBlind(dest_x, dest_y)
-      config.jumping_state = "wait_for_jump"
-    end
-  elseif config.jumping_state == "wait_for_jump" then
-    if distance(jc, dest_x, dest_y) < 10000 then
-      -- We check for the player 1 tick later, as it can take a game tick for the player position to update as well.
-      config.jumping_state = "check_for_player"
-    end
-  elseif config.jumping_state == "check_for_player" then
-    config.jumping_state = "wait_for_dock"
-    if distance(player, dest_x, dest_y) < 10000 then
-      -- Good, continue.
-      config.jump_finished = true
-      return true
-    else
-      -- fly back
-      jc:orderFlyTowardsBlind(source_x, source_y)
-      jc:sendCommsMessage(
-          player,
-          _("JumpCarrier-incCall", [[Looks like the docking couplers detached prematurely.\n\nThis happens sometimes. I am on my way so we can try again.]])
-      )
-    end
-  end
-  return false
-end
-
---***** TODO
--- Please undock to finish the jump
--- Please dock with us to start the jump
--- Cancel current jump
-
-function jc2Comms() -- I wish there were a way to make this generic instead of ship-specific
-  local config = jumpConfig["jc2"]
-  setCommsMessage("Where to?")
-  for dest, c in pairs(config.destinations) do
-    addCommsReply(dest, function()
-        config.current_destination = dest
-      end
-    )
-  end
-end
-
-function updateJumpCarrierState(jc, configKey)
-  local config = jumpConfig[configKey]
-  if not player:isDocked(jc) then
-    config.jump_finished = false
-  else
-    if config.current_destination == nil then return end
-    if not config.jump_finished then
-      local src = config.destinations[config.current_location]
-      local dest = config.destinations[config.current_destination]
-
-      if handleJumpCarrier(jc, configKey, src[1], src[2], dest[1], dest[2]) then
-        config.current_location = config.current_destination
-        config.current_destination = nil
-      end
-    end
-  end
-end
-
--- Test sectorToXY()
 function init()
   player = PlayerSpaceship():setFaction("Human Navy"):setTemplate("Atlantis"):setPosition(sectorToXY("F5")):setRotation(315)
   player:setLongRangeRadarRange(80000)
@@ -180,8 +34,7 @@ function init()
 
   jc2 = CpuShip():setFaction("Human Navy"):setTemplate("Jump Carrier"):setCallSign("JC-2"):setScanned(true):setPosition(300, 300):orderIdle()
   jc2:setJumpDriveRange(5000, 1000 * 50000)
-  jc2:setCommsFunction(jc2Comms)
-  transport_state = "home"
+  jc2:setCommsFunction(jcComms)
 
 end
 
@@ -193,7 +46,7 @@ function update(delta)
     victory("The authors of history")
   end
 
-  updateJumpCarrierState(jc2, "jc2");
+  updateJumpCarrierState(jc2);
 
   --When Omega station is destroyed, call it a victory for the Human Navy.
   -- if not enemy_station:isValid() then
