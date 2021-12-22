@@ -3,7 +3,7 @@
 -- Type: Development
 
 require("utils.lua")
-require("jump_carrier.lua")
+require("jump_carriers.lua")
 require("jam_area.lua")
 
 jumpConfig = {
@@ -12,11 +12,7 @@ jumpConfig = {
       ["Home"] = { 2000, 2000 },
       ["Zulu Nine-Niner"] = { sectorToXY("Z99") },
       ["Alpha Sector"] =  { sectorToXY("A0") },
-    },
-    current_location = "Home",
-    current_destination = nil,
-    jumping_state = "wait_for_dock",
-    jump_finished = true,
+    }
   }
 }
 
@@ -33,7 +29,7 @@ function init()
   Planet():setPosition(-20595, 60535):setPlanetRadius(40000):setPlanetSurfaceTexture("planets/planet-1.png"):setPlanetCloudTexture("planets/clouds-1.png"):setPlanetAtmosphereTexture("planets/atmosphere.png"):setPlanetAtmosphereColor(0.2, 0.2, 1.0)
 
   jc2 = CpuShip():setFaction("Human Navy"):setTemplate("Jump Carrier"):setCallSign("JC-2"):setScanned(true):setPosition(300, 300):orderIdle()
-  jc2:setJumpDriveRange(5000, 1000 * 50000)
+  jc2:setJumpDriveRange(5000, 50000000)
   jc2:setCommsFunction(jcComms)
 
 end
