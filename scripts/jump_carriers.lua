@@ -15,6 +15,9 @@
 --          ["Alpha Sector"] =  { sectorToXY("A0") }
 --        }
 --        pre_jump_hook = function() ... end  -- OPTIONAL function to be called before jump (allows you to set real-time destination coordinates)
+--        unDockedComms = "Dock with us to jump to: \n\n" -- OPTIONAL override for undocked comms message
+--        menuComms = "Pick a destination..." -- OPTIONAL override for destination menu comms message
+--        rogerComms = "On our way to: "  -- OPTIONAL override for the acknowledgement comms message
 --      }
 --    }
 --
@@ -32,8 +35,8 @@
 --
 -- TODO
 -- ----
--- Optional Comms message overrides in the config
 -- Jump to waypoints
+-- Prices
 -- Localization
 
 function handleJumpCarrier(jc, dest_x, dest_y)
@@ -53,7 +56,7 @@ function handleJumpCarrier(jc, dest_x, dest_y)
   end
 
   if config.countdown > 0 then
-    config.user:addToShipLog(config.countdown .."...".. getScenarioTime(), "White")
+    config.user:addToShipLog(config.countdown .."...", "White")
   else
     config.user:addToShipLog("JUMP!", "Red")
     jc:setPosition(dest_x, dest_y)
@@ -70,19 +73,27 @@ function jcComms(comms_source, comms_target)
     for dest, c in pairs(config.destinations) do --FIX?: Order is not guaranteed
       destinations = destinations ..dest .."\n"
     end
-    setCommsMessage("Please dock with us if you'd like to jump to any of our destinations: \n\n"..destinations)
+    if config.unDockedComms ~= nil then
+      setCommsMessage(config.unDockedComms ..destinations)
+    else
+      setCommsMessage("Please dock with us if you'd like to jump to any of our destinations: \n\n"..destinations)
+    end
     return
   end
-  if config.jumping_state ~= nil then
-    setCommsMessage("Please complete the current jump before calling back")
-    return
+  if config.menuComms ~= nil then
+    setCommsMessage(config.menuComms)
+  else
+    setCommsMessage("Where to?")
   end
-  setCommsMessage("Where to?")
   for dest, c in pairs(config.destinations) do --FIX?: Order is not guaranteed
     addCommsReply(dest, function()
         config.current_destination = dest
         config.user = comms_source
-        setCommsMessage("Roger that, proceeding to "..dest)
+        if config.rogerComms ~= nil then
+          setCommsMessage(config.rogerComms)
+        else
+          setCommsMessage("Roger that, proceeding to "..dest)
+        end
       end
     )
   end
