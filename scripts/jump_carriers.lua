@@ -10,10 +10,11 @@
 --    jumpConfig = {
 --      ["JC-2"] = {
 --        destinations = {
---          ["Home"] = { 2000, 2000 },  -- NOTE: The first jump needs to start near the first listed destination
+--          ["Home"] = { 2000, 2000 },  -- NOTE: The first jump should start near the first listed destination (for "fly back" if you undock before jump)
 --          ["Zulu Nine-Niner"] = { sectorToXY("Z99") },
 --          ["Alpha Sector"] =  { sectorToXY("A0") }
 --        }
+--        pre_jump_hook = function() ... end  -- OPTIONAL function to be called before jump (allows you to set real-time destination coordinates)
 --      }
 --    }
 --
@@ -31,6 +32,7 @@
 --
 -- TODO
 -- ----
+-- Count-down for setPosition?
 -- Optional Comms message overrides in the config
 -- Jump to waypoints
 -- Localization
@@ -53,6 +55,7 @@ function handleJumpCarrier(jc, source_x, source_y, dest_x, dest_y)
     config.current_location = config.current_destination
     config.current_destination = nil
     if distance(config.user, dest_x, dest_y) < 10000 then
+      sendCommsMessage("Welcome to "..getSectorName(dest_x, dest_y))
       return true
     else
       -- fly back if the player didn't land with us (undocked before jump)
@@ -87,7 +90,7 @@ function jcComms(comms_source, comms_target)
     addCommsReply(dest, function()
         config.current_destination = dest
         config.user = comms_source
-        setCommsMessage("Roger that, proceeding to "..getSectorName(c[1], c[2]))
+        setCommsMessage("Roger that, proceeding to "..dest)
       end
     )
   end
@@ -96,9 +99,18 @@ end
 
 function updateJumpCarrierState(jc)
   local config = jumpConfig[jc:getCallSign()]
+
+  -- Do nothing if we haven't set a destination via comms
   if config.current_destination == nil then return end
+
+  -- Default location if the first destination in the list (*****BUG lua doesn't guarantee order - this can be set manually if it turns out to be a problem)
   if config.current_location == nil then config.current_location,_ = next(config.destinations) end
+
+  -- Optional hook to twiddle config before seting jump params (eg. realtime destination updates for orbiting bodies)
+  if config.pre_jump_hook ~= nil then config.pre_jump_hook() end
+
   local src = config.destinations[config.current_location]
   local dest = config.destinations[config.current_destination]
+
   handleJumpCarrier(jc, src[1], src[2], dest[1], dest[2])
 end

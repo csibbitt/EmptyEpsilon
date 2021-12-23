@@ -97,7 +97,7 @@ function init()
    -- TODO: Decide which bodies should have :setPlanetAtmosphereTexture("planets/atmosphere.png")
    
    -- Place the Sun approximately 1 AU to the Left, so that we can start near Earth.
-   local  sun = Planet():setCallSign("Sol"):setPosition(0-solScaleAU(1), 0):setPlanetRadius(solScale(696000000)):setPlanetAtmosphereTexture("planets/star-1.png"):setPlanetAtmosphereColor(0.8, 0.6, 0.1)
+   local sun = Planet():setCallSign("Sol"):setPosition(0-solScaleAU(1), 0):setPlanetRadius(solScale(696000000)):setPlanetAtmosphereTexture("planets/star-1.png"):setPlanetAtmosphereColor(0.8, 0.6, 0.1)
    local sun_x, sun_y = sun:getPosition()
 
    local mercury = Planet():setCallSign("Mercury"):setPosition(sun_x+solScaleAU(0.387098), 0):setPlanetRadius(solScale(2440000)):setPlanetSurfaceTexture("planets/Mercury/mercury-1.png"):setPlanetAtmosphereColor(0.2, 0.1, 0.0):setAxialRotationTime(dayToSec(176)):setOrbit(sun, dayToSec(87.9691))
@@ -177,12 +177,22 @@ function init()
    jc2:setJumpDriveRange(5000, 20000 * 200000)
    jc2:setCommsFunction(jcComms)
 
-   -- ***** This would be better just being in "init" and allow a function in the config that gets called before the co-ords are retrieved
+   -- Populate the jumpConfig destinations with placeholders for the menu
+   destination_bodies_index = {}
    for i = 1, #destination_bodies do
-      p = destination_bodies[i]
-      --player:addToShipLog(p:getCallSign(),"Yellow")
+      local p = destination_bodies[i]
+      local callsign = p:getCallSign()
+      jumpConfig["JC-2"].destinations[callsign] = {nil, nil}
+      -- Build another list of the destinations indexed my callsign for later access
+      destination_bodies_index[callsign] = p
+   end
+
+   -- Set up a hook to finalizing the jump co-ords before jump
+   jumpConfig["JC-2"].pre_jump_hook = function()
+      local config = jumpConfig["JC-2"]
+      local p = destination_bodies_index[config.current_destination]
       x, y =  p:getPosition()
-      x = x + p:getPlanetRadius() + 5 * 20000
+      x = x + (p:getPlanetRadius() * 2.5)
       jumpConfig["JC-2"].destinations[p:getCallSign()] = {x, y}
    end
 
@@ -190,15 +200,6 @@ end
 
 function update(delta)
    updateJumpCarrierState(jc2);
-
-   -- ***** This would be better just being in "init" and allow a function in the config that gets called before the co-ords are retrieved
-   -- for i = 1, #destination_bodies do
-   --    p = destination_bodies[i]
-   --    --player:addToShipLog(p:getCallSign(),"Yellow")
-   --    x, y =  p:getPosition()
-   --    x = x + p:getPlanetRadius() + 5 * 20000
-   --    jumpConfig["JC-2"].destinations[p:getCallSign()] = {x, y}
-   -- end
 end
 
 -- Set callback function
