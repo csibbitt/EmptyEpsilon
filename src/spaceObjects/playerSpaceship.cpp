@@ -1117,7 +1117,7 @@ void PlayerSpaceship::setRepairCrewCount(int amount)
 
 void PlayerSpaceship::addToShipLog(string message, glm::u8vec4 color)
 {
-    // Cap the ship's log size to 10000 entries. If it exceeds that limit,
+    // Cap the ship's log size to 400 entries. If it exceeds that limit,
     // start erasing entries from the beginning.
     if (ships_log.size() > 10000)
         ships_log.erase(ships_log.begin());
