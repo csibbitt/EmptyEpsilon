@@ -1119,7 +1119,7 @@ void PlayerSpaceship::addToShipLog(string message, glm::u8vec4 color)
 {
     // Cap the ship's log size to 400 entries. If it exceeds that limit,
     // start erasing entries from the beginning.
-    if (ships_log.size() > 10000)
+    if (ships_log.size() > 400)
         ships_log.erase(ships_log.begin());
 
     // Timestamp a log entry, color it, and add it to the end of the log.
