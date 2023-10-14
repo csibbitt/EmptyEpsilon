@@ -5,6 +5,7 @@
 #include "scanProbe.h"
 #include "commsScriptInterface.h"
 #include "playerInfo.h"
+#include "seqvector.h"
 #include <iostream>
 
 class ScanProbe;
@@ -111,9 +112,10 @@ private:
     std::vector<string> comms_reply_message;
     CommsScriptInterface comms_script_interface; // Server only
     // Ship's log container
-    std::vector<ShipLogEntry> ships_log;
+    sp::SeqVector<ShipLogEntry> ships_log;
     float energy_shield_use_per_second = default_energy_shield_use_per_second;
     float energy_warp_per_second = default_energy_warp_per_second;
+    unsigned int last_log_seq = 1;
 public:
     std::vector<CustomShipFunction> custom_functions;
 
