@@ -18,13 +18,16 @@
 /// Factions are loaded from resources/factionInfo.lua upon launching a scenario, and accessed by using the getFactionInfo() global function.
 ///
 /// Example:
+/// human_navy = getFactionInfo("Human Navy")
+/// exuari = getFactionInfo("Exuari")
 /// faction = FactionInfo():setName("USN"):setLocaleName(_("USN")) -- sets the internal and translatable faction names
 /// faction:setGMColor(255,128,255) -- uses purple icons for this faction's SpaceObjects in GM and Spectator views
-/// faction:setFriendly(human):setEnemy(Exuari) -- sets this faction's friendly and hostile relationships
+/// faction:setFriendly(human_navy):setEnemy(exuari) -- sets this faction's friendly and hostile relationships
 /// faction:setDescription(_("The United Stellar Navy, or USN...")) -- sets a translatable description for this faction
 REGISTER_SCRIPT_CLASS(FactionInfo)
 {
     /// Sets this faction's internal string name, used to reference this faction regardless of EmptyEpsilon's language setting.
+    /// If no locale name is defined, this sets the locale name to the same value.
     /// Example: faction:setName("USN")
     REGISTER_SCRIPT_CLASS_FUNCTION(FactionInfo, setName);
     /// Sets this faction's name as presented in the user interface.
@@ -43,13 +46,17 @@ REGISTER_SCRIPT_CLASS(FactionInfo)
     /// For example, Spaceships of this faction can target and fire at SpaceShips of the given faction.
     /// Defaults to no hostile factions.
     /// Warning: A faction can be designated as hostile to itself, but the behavior is not well-defined.
-    /// Example: faction:setEnemy("Exuari") -- sets the Exuari to appear as hostile to this faction
+    /// Example: faction:setEnemy(exuari) -- sets the Exuari to appear as hostile to this faction
     REGISTER_SCRIPT_CLASS_FUNCTION(FactionInfo, setEnemy);
     /// Sets the given faction to appear as friendly to SpaceObjects of this faction.
     /// For example, PlayerSpaceships of this faction can gain reputation with it.
     /// Defaults to no friendly factions.
-    /// Example: faction:setFriendly("Human Navy") -- sets the Human Navy to appear as friendly to this faction
+    /// Example: faction:setFriendly(exuari) -- sets the Human Navy to appear as friendly to this faction
     REGISTER_SCRIPT_CLASS_FUNCTION(FactionInfo, setFriendly);
+    /// Sets the given faction to appear as neutral to SpaceObjects of this faction.
+    /// This removes any existing faction relationships between the two factions.
+    /// Example: faction:setNeutral(human_navy) -- sets the Human Navy to appear as neutral to this faction
+    REGISTER_SCRIPT_CLASS_FUNCTION(FactionInfo, setNeutral);
 }
 
 std::array<P<FactionInfo>, 32> factionInfo;
@@ -134,6 +141,20 @@ void FactionInfo::setFriendly(P<FactionInfo> other)
 
     friend_mask |= (1U << other->index);
     other->friend_mask |= (1U << index);
+    enemy_mask &=~(1 << other->index);
+    other->enemy_mask &=~(1 << index);
+}
+
+void FactionInfo::setNeutral(P<FactionInfo> other)
+{
+    if (!other)
+    {
+        LOG(WARNING) << "Tried to set an undefined faction to be neutral with " << name;
+        return;
+    }
+
+    friend_mask &=~(1 << other->index);
+    other->friend_mask &=~(1 << index);
     enemy_mask &=~(1 << other->index);
     other->enemy_mask &=~(1 << index);
 }

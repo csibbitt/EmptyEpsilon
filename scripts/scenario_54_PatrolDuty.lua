@@ -3,29 +3,23 @@
 ---
 --- Version 8
 -- Type: Mission
--- Variation[Easy]: Easy goals and/or enemies
--- Variation[Hard]: Hard goals and/or enemies
--- Variation[Self-destructive]: Extremely difficult goals and/or enemies
--- Variation[Short]: Fewer mission goals or shorter mission goals, shorter time taken
--- Variation[Timed 15]: End in 15 minutes
--- Variation[Timed 30]: End in 30 minutes
--- Variation[Short Easy]: Shorter time taken, easy goals and/or enemies
--- Variation[Timed 15 Easy]: End in 15 minutes, easy goals and/or enemies
--- Variation[Timed 30 Easy]: End in 30 minutes, easy goals and/or enemies
--- Variation[Short Hard]: Shorter time taken, hard goals and/or enemies
--- Variation[Timed 15 Hard]: End in 15 minutes, hard goals and/or enemies
--- Variation[Timed 30 Hard]: End in 30 minutes, hard goals and/or enemies
--- Variation[Short Self-destructive]: Shorter time taken, extremely difficult goals and/or enemies
--- Variation[Timed 15 Self-destructive]: End in 15 minutes, extremely difficult goals and/or enemies
--- Variation[Timed 30 Self-destructive]: End in 30 minutes, extremely difficult goals and/or enemies
--- Variation[Long]: More mission goals, longer time taken
--- Variation[Long Easy]: Longer time taken, easy goals and/or enemies
--- Variation[Long Hard]: Longer time taken, hard goals and/or enemies
--- Variation[Long Self-destructive]: Longer time taken, extremely difficult goals and/or enemies
--- Variation[Extended]: Longer missions than the long variation, longest time taken
--- Variation[Extended Easy]: Longest time taken, easy goals and/or enemies
--- Variation[Extended Hard]: Longest time taken, hard goals and/or enemies
--- Variation[Extended Self-destructive]: Longest time taken, extremely difficult goals and/or enemies
+-- Setting[Enemies]: Configures strength and/or number of enemies in this scenario
+-- Enemies[Easy]: Fewer or weaker enemies
+-- Enemies[Normal|Default]: Normal number or strength of enemies
+-- Enemies[Hard]: More or stronger enemies
+-- Setting[Murphy]: Configures the perversity of the universe according to Murphy's law
+-- Murphy[Easy]: Random factors are more in your favor
+-- Murphy[Normal|Default]: Random factors are normal
+-- Murphy[Hard]: Random factors are more against you
+-- Setting[Length]: Determines the number of mission goals
+-- Length[Short]: Fewer mission goals
+-- Length[Normal|Default]: Normal number of mission goals
+-- Length[Long]: More mission goals
+-- Length[Extended]: Maximum number of mission goals
+-- Setting[Timed]: Determines whether or not there is a fixed time limit for the game and its duration
+-- Timed[No|Default]: No game time limit
+-- Timed[15]: Fifteen minute time limit
+-- Timed[30]: Thirty minute time limit
 
 require("utils.lua")
 
@@ -169,46 +163,41 @@ function init()
 	addGMFunction(_("buttonGM", "Skip to destroy S.C."),skipToDestroySC)
 end
 function setVariations()
-	-- Difficulty setting: 1 = normal, .5 is easy, 2 is hard, 5 is ridiculously hard
-	difficultyList = {.5, 1, 2, 5}
-	difficultySettingList = {"Easy", "Normal", "Hard", "Self-Destructive"}
-	difficultyIndex = 2		--default to normal difficulty
-	difficulty = difficultyList[difficultyIndex]
-	if string.find(getScenarioVariation(),"Short") or string.find(getScenarioVariation(),"Timed") then
-		patrolGoal = 6			--short and timed missions get a patrol goal of 6
-		missionLength = 1		--short and timed missions are categorized as mission length 1
-	else
-		patrolGoal = 9			--normal, long and extended get a patrol goal of 9
-		if string.find(getScenarioVariation(),"Long") then
-			missionLength = 3	--long missions are categorized as mission length 3
-		elseif string.find(getScenarioVariation(),"Extended") then
-			missionLength = 4	--extended missions are categorized as mission length 4
-		else
-			missionLength = 2	--normal missions are categorized as mission length 2
-		end
-	end
-	if string.find(getScenarioVariation(),"Easy") then
-		difficulty = .5			--easy missions get a .5 difficulty
-	elseif string.find(getScenarioVariation(),"Hard") then
-		difficulty = 2			--hard missions get a difficulty of 2
-	elseif string.find(getScenarioVariation(),"Self-destructive") then
-		difficulty = 5			--self destructive missions get a difficulty of 5
-	else
-		difficulty = 1			--default: normal mission difficulty of 1
-	end
-	playWithTimeLimit = false	--assume no time limit
-	if string.find(getScenarioVariation(),"15") then
-		gameTimeLimit = 15		--set 15 minute time limit
-	elseif string.find(getScenarioVariation(),"30") then
-		gameTimeLimit = 30		--set 30 minute time limit
-	else
-		gameTimeLimit = 0		--default: set no time limit
-	end
+	local enemy_config = {
+		["Easy"] =		{number = .5},
+		["Normal"] =	{number = 1},
+		["Hard"] =		{number = 2},
+	}
+	enemy_power =	enemy_config[getScenarioSetting("Enemies")].number
+	local murphy_config = {
+		["Easy"] =		{number = .5,	rep = 70,	adverse = .999,	lose_coolant = .99999,	gain_coolant = .005},
+		["Normal"] =	{number = 1,	rep = 50,	adverse = .995,	lose_coolant = .99995,	gain_coolant = .001},
+		["Hard"] =		{number = 2,	rep = 30,	adverse = .99,	lose_coolant = .9999,	gain_coolant = .0001},
+	}
+	difficulty =	murphy_config[getScenarioSetting("Murphy")].number
+	local length_config = {
+		["Short"] = 	{number = 1},
+		["Normal"] = 	{number = 2},
+		["Long"] = 		{number = 3},
+		["Extended"] =	{number = 4}
+	}
+	patrolGoal = 9
+	missionLength = length_config[getScenarioSetting("Length")].number
+	local time_config = {
+		["No"] = 0,
+		["15"] = 15,
+		["30"] = 30,
+	}
+	gameTimeLimit = time_config[getScenarioSetting("Timed")]
+	playWithTimeLimit = false
 	if gameTimeLimit > 0 then
 		gameTimeLimit = gameTimeLimit*60	--convert minutes to seconds for time limit countdown
 		ambushTime = gameTimeLimit/2		--set halfway point for ambush in timed scenarios
 		playWithTimeLimit = true			--set time limit boolean
 		plot7 = beforeAmbush				--use time limit plot
+	end
+	if mission_length == 1 or gameTimeLimit > 0 then
+		patrolGoal = 6
 	end
 end
 function setConstants()
@@ -3467,7 +3456,7 @@ function placeStation(x,y,name,faction,size)
 	end
 	local function Set(list)
 		local set = {}
-		for _, item in ipairs(list) do
+		for i, item in ipairs(list) do
 			set[item] = true
 		end
 		return set
@@ -4170,7 +4159,7 @@ function transportPlot(delta)
 		lastTransportCount = transportCount
 		if transportCount < #transportList then
 			tempTransportList = {}
-			for _, obj in ipairs(transportList) do
+			for i, obj in ipairs(transportList) do
 				if obj:isValid() then
 					table.insert(tempTransportList,obj)
 				end
@@ -4338,7 +4327,7 @@ function handleDockedState()
 	setCommsMessage(oMsg)
 	missilePresence = 0
 	local missile_types = {'Homing', 'Nuke', 'Mine', 'EMP', 'HVLI'}
-	for _, missile_type in ipairs(missile_types) do
+	for i, missile_type in ipairs(missile_types) do
 		missilePresence = missilePresence + comms_source:getWeaponStorageMax(missile_type)
 	end
 	if missilePresence > 0 then
@@ -4474,10 +4463,10 @@ function handleDockedState()
 			if random(1,10) <= (6 - difficulty) then
 				if comms_target == stationAsimov or comms_target == stationUtopiaPlanitia or comms_target == stationArmstrong then
 					if comms_target.telemetry == nil then
-						addCommsReply(string.format(_("trade-comms", "Establish defensive telemetry link (%i rep)"),10*difficulty),function()
+						addCommsReply(string.format(_("defTelemetry-comms", "Establish defensive telemetry link (%i rep)"),10*difficulty),function()
 							if comms_source:takeReputationPoints(10*difficulty) then
 								comms_target.telemetry = true
-								setCommsMessage(_("trade-comms", "Automated telemetry for shields and hull established.\nDamage summary should appear on Relay when damage taken"))
+								setCommsMessage(_("defTelemetry-comms", "Automated telemetry for shields and hull established.\nDamage summary should appear on Relay when damage taken"))
 							else
 								setCommsMessage(_("needRep-comms", "Insufficient reputation"))
 							end
@@ -4611,7 +4600,7 @@ function handleDockedState()
 						local brochure_stations = ""
 						local sx, sy = comms_target:getPosition()
 						local nearby_objects = getObjectsInRadius(sx,sy,30000)
-						for _, obj in ipairs(nearby_objects) do
+						for i, obj in ipairs(nearby_objects) do
 							if obj.typeName == "SpaceStation" then
 								if not obj:isEnemy(comms_target) then
 									if brochure_stations == "" then
@@ -4633,7 +4622,7 @@ function handleDockedState()
 						local brochure_goods = ""
 						local sx, sy = comms_target:getPosition()
 						local nearby_objects = getObjectsInRadius(sx,sy,30000)
-						for _, obj in ipairs(nearby_objects) do
+						for i, obj in ipairs(nearby_objects) do
 							if obj.typeName == "SpaceStation" then
 								if not obj:isEnemy(comms_target) then
 									if obj.comms_data.goods ~= nil then
@@ -4667,7 +4656,7 @@ function handleDockedState()
 					local sx, sy = comms_target:getPosition()
 					local nearby_objects = getObjectsInRadius(sx,sy,50000)
 					local stations_known = 0
-					for _, obj in ipairs(nearby_objects) do
+					for i, obj in ipairs(nearby_objects) do
 						if obj.typeName == "SpaceStation" then
 							if not obj:isEnemy(comms_target) then
 								stations_known = stations_known + 1
@@ -4705,7 +4694,7 @@ function handleDockedState()
 					local nearby_objects = getObjectsInRadius(sx,sy,50000)
 					local button_count = 0
 					local by_goods = {}
-					for _, obj in ipairs(nearby_objects) do
+					for i, obj in ipairs(nearby_objects) do
 						if obj.typeName == "SpaceStation" then
 							if not obj:isEnemy(comms_target) then
 								if obj.comms_data.goods ~= nil then
@@ -4935,7 +4924,7 @@ function handleDockedState()
 	end
 	if comms_target:getCallSign() == _("upgrade-comms", "Utopia Planitia") and (minerUpgrade or nabbitUpgrade or lisbonUpgrade or artAnchorUpgrade or addTubeUpgrade) then
 		addCommsReply(_("upgrade-comms", "Check maintenance bay for ship upgrade"), function()
-			setCommsMessage(string.format("Greetings %s,\nWelcome to the ship maintenance bay of %s. What can we do for you?",comms_source:getCallSign(),comms_target:getCallSign()))
+			setCommsMessage(string.format(_("upgrade-comms", "Greetings %s,\nWelcome to the ship maintenance bay of %s. What can we do for you?"),comms_source:getCallSign(),comms_target:getCallSign()))
 			if minerUpgrade then
 				addCommsReply(_("upgrade-comms", "Upgrade beam weapons with Joshua Kojak's research"), function()
 					if comms_source.kojakUpgrade then
@@ -4968,13 +4957,13 @@ function handleDockedState()
 									comms_source.goods[comms_source.kojakPart] = comms_source.goods[comms_source.kojakPart] - 1
 									comms_source.cargo = comms_source.cargo + 1
 									comms_source.kojakUpgrade = true
-									setCommsMessage(string.format(_("upgrade-comms", "Thanks for the %s. Your beam weapons now have improved range, cycle time and damage."),comms_source.kojakPart))
+									setCommsMessage(string.format(_("upgradeAudio1-comms", "Thanks for the %s. Your beam weapons now have improved range, cycle time and damage."),comms_source.kojakPart))
 								else
-									setCommsMessage(string.format(_("upgrade-comms", "We find ourselves short of %s. Please bring us some of that kind of cargo and we can upgrade your beams"),comms_source.kojakPart))
+									setCommsMessage(string.format(_("upgradeAudio1", "We find ourselves short of %s. Please bring us some of that kind of cargo and we can upgrade your beams"),comms_source.kojakPart))
 								end
 							else
 								kojakBeamUpgrade()
-								setCommsMessage(_("upgrade-comms", "Your beam weapons now have improved range, cycle time and damage."))
+								setCommsMessage(_("upgradeAudio1-comms", "Your beam weapons now have improved range, cycle time and damage."))
 								comms_source.kojakUpgrade = true
 							end
 						end
@@ -5014,10 +5003,10 @@ function handleDockedState()
 									playSoundFile("audio/scenario/54/sa_54_UTImpulse.ogg")
 									impulseDone = "played"
 								end
-								setCommsMessage(string.format(_("upgrade-comms", "Thanks for the %s. Your impulse engines now have improved speed"),comms_source.nabbitPart))
+								setCommsMessage(string.format(_("upgradeAudio2-comms", "Thanks for the %s. Your impulse engines now have improved speed"),comms_source.nabbitPart))
 								comms_source.nabbitUpgrade = true
 							else
-								setCommsMessage(string.format(_("upgrade-comms", "We're short of %s. Please bring us some of that kind of cargo and we can upgrade your impulse engines"),comms_source.nabbitPart))
+								setCommsMessage(string.format(_("upgradeAudio2-comms", "We're short of %s. Please bring us some of that kind of cargo and we can upgrade your impulse engines"),comms_source.nabbitPart))
 							end
 						else
 							comms_source:setImpulseMaxSpeed(comms_source:getImpulseMaxSpeed()*1.2)
@@ -5025,7 +5014,7 @@ function handleDockedState()
 								playSoundFile("audio/scenario/54/sa_54_UTImpulse.ogg")
 								impulseDone = "played"
 							end
-							setCommsMessage(_("upgrade-comms", "Your impulse engines now have improved speed"))
+							setCommsMessage(_("upgradeAudio2-comms", "Your impulse engines now have improved speed"))
 							comms_source.nabbitUpgrade = true
 						end
 					end
@@ -5035,7 +5024,7 @@ function handleDockedState()
 			if lisbonUpgrade then
 				addCommsReply(_("upgrade-comms", "Apply Commander Lisbon's beam cooling algorithm"), function()
 					if comms_source.lisbonUpgrade then
-						setCommsMessage("You already have the upgrade.")
+						setCommsMessage(_("upgrade-comms", "You already have the upgrade."))
 					else
 						if comms_source:getBeamWeaponRange(0) < 1 then
 							setCommsMessage(_("upgrade-comms", "Your ship type does not support a beam weapon upgrade."))
@@ -5063,13 +5052,13 @@ function handleDockedState()
 									lisbonBeamUpgrade()
 									comms_source.goods[comms_source.lisbonPart] = comms_source.goods[comms_source.lisbonPart] - 1
 									comms_source.cargo = comms_source.cargo + 1
-									setCommsMessage(string.format(_("upgrade-comms", "Thanks for bringing us %s. Your beam weapons now generate less heat when firing"),comms_source.lisbonPart))
+									setCommsMessage(string.format(_("upgradeAudio3-comms", "Thanks for bringing us %s. Your beam weapons now generate less heat when firing"),comms_source.lisbonPart))
 								else
-									setCommsMessage(string.format(_("upgrade-comms", "The algorithm requires components we don't have right now. Please bring us some %s and we can apply the upgrade"),comms_source.lisbonPart))
+									setCommsMessage(string.format(_("upgradeAudio3-comms", "The algorithm requires components we don't have right now. Please bring us some %s and we can apply the upgrade"),comms_source.lisbonPart))
 								end
 							else
 								lisbonBeamUpgrade()
-								setCommsMessage(_("upgrade-comms", "Your beam weapons now generate less heat when firing."))
+								setCommsMessage(_("upgradeAudio3-comms", "Your beam weapons now generate less heat when firing."))
 							end
 						end
 					end
@@ -5104,13 +5093,13 @@ function handleDockedState()
 								comms_source.goods[comms_source.artifactUpgradePart] = comms_source.goods[comms_source.artifactUpgradePart] - 1
 								comms_source.cargo = comms_source.cargo + 1
 								artifactUpgrade()
-								setCommsMessage(string.format(_("upgrade-comms", "We needed that %s, thanks. Your maneuverability has been significantly improved"),comms_source.artifactUpgradePart))
+								setCommsMessage(string.format(_("upgradeAudio4-comms", "We needed that %s, thanks. Your maneuverability has been significantly improved"),comms_source.artifactUpgradePart))
 							else
-								setCommsMessage(string.format(_("upgrade-comms", "To upgrade, we need you to bring us some %s"),comms_source.artifactUpgradePart))
+								setCommsMessage(string.format(_("upgradeAudio4-comms", "To upgrade, we need you to bring us some %s"),comms_source.artifactUpgradePart))
 							end
 						else
 							artifactUpgrade()
-							setCommsMessage(_("upgrade-comms", "Your maneuverability has been significantly improved"))
+							setCommsMessage(_("upgradeAudio4-comms", "Your maneuverability has been significantly improved"))
 						end
 					end
 					addCommsReply(_("Back"), commsStation)
@@ -5191,7 +5180,7 @@ function masterCartographer()
 			setCommsMessage(_("cartographyOffice-comms", "What station?"))
 			local nearby_objects = getAllObjects()
 			local stations_known = 0
-			for _, obj in ipairs(nearby_objects) do
+			for i, obj in ipairs(nearby_objects) do
 				if obj.typeName == "SpaceStation" then
 					if not obj:isEnemy(comms_target) then
 						local station_distance = distance(comms_target,obj)
@@ -5233,7 +5222,7 @@ function masterCartographer()
 			setCommsMessage(_("cartographyOffice-comms", "What goods are you looking for?"))
 			local nearby_objects = getAllObjects()
 			local by_goods = {}
-			for _, obj in ipairs(nearby_objects) do
+			for i, obj in ipairs(nearby_objects) do
 				if obj.typeName == "SpaceStation" then
 					if not obj:isEnemy(comms_target) then
 						local station_distance = distance(comms_target,obj)
@@ -5332,7 +5321,7 @@ function isAllowedTo(state)
 end
 function handleWeaponRestock(weapon)
     if not comms_source:isDocked(comms_target) then 
-		setCommsMessage(_("ammo-comms", "You need to stay docked for that action."))
+		setCommsMessage(_("station-comms", "You need to stay docked for that action."))
 		return
 	end
     if not isAllowedTo(comms_data.weapons[weapon]) then
@@ -5446,7 +5435,7 @@ function handleUndockedState()
 		addCommsReply(_("helpfullWarning-comms", "See any enemies in your area?"), function()
 			if comms_source:isFriendly(comms_target) then
 				enemiesInRange = 0
-				for _, obj in ipairs(comms_target:getObjectsInRange(30000)) do
+				for i, obj in ipairs(comms_target:getObjectsInRange(30000)) do
 					if obj:isEnemy(comms_source) then
 						enemiesInRange = enemiesInRange + 1
 					end
@@ -5756,7 +5745,7 @@ function friendlyComms(comms_data)
 		setCommsMessage(msg);
 		addCommsReply(_("Back"), commsShip)
 	end)
-	for _, obj in ipairs(comms_target:getObjectsInRange(5000)) do
+	for i, obj in ipairs(comms_target:getObjectsInRange(5000)) do
 		if obj.typeName == "SpaceStation" and not comms_target:isEnemy(obj) then
 			addCommsReply(string.format(_("shipAssist-comms", "Dock at %s"), obj:getCallSign()), function()
 				setCommsMessage(string.format(_("shipAssist-comms", "Docking at %s."), obj:getCallSign()));
@@ -5815,7 +5804,7 @@ function neutralComms(comms_data)
 			for good, goodData in pairs(comms_data.goods) do
 				if goodData.quantity > 0 then
 					if goodCount > 0 then
-						cargoMsg = cargoMsg .. ", " .. good
+						cargoMsg = cargoMsg .. _("trade-comms", ", ") .. good
 					else
 						cargoMsg = cargoMsg .. good
 					end
@@ -5904,10 +5893,10 @@ function neutralComms(comms_data)
 				end	--freighter goods loop
 			end
 		elseif comms_data.friendlyness > 33 then
-			setCommsMessage("What do you want?")
+			setCommsMessage(_("shipAssist-comms", "What do you want?"))
 			-- Offer to sell destination information
 			destRep = random(1,5)
-			addCommsReply(string.format("Where are you headed? (cost: %f reputation)",destRep), function()
+			addCommsReply(string.format(_("trade-comms", "Where are you headed? (cost: %f reputation)"),destRep), function()
 				if not comms_source:takeReputationPoints(destRep) then
 					setCommsMessage(_("needRep-comms", "Insufficient reputation"))
 				else
@@ -5924,7 +5913,7 @@ function neutralComms(comms_data)
 					end
 				end
 				if goodCount > 0 then
-					addCommsReply("Jettison cargo", function()
+					addCommsReply(_("trade-comms", "Jettison cargo"), function()
 						setCommsMessage(string.format(_("trade-comms", "Available space: %i\nWhat would you like to jettison?"),comms_source.cargo))
 						for good, good_quantity in pairs(comms_source.goods) do
 							if good_quantity > 0 then
@@ -6664,18 +6653,18 @@ function patrolAsimovUtopiaPlanitiaArmstrong(delta)
 		--ox, oy = vectorFromAngle(random(0,360),getLongRangeRadarRange()+1000)
 		--ox, oy = vectorFromAngle(random(0,360),31000)	--workaround
 		ox, oy = vectorFromAngle(random(0,360),p:getLongRangeRadarRange()+1000)
-		harassFleet = spawnEnemies(px+ox,py+oy,difficulty)
+		harassFleet = spawnEnemies(px+ox,py+oy,enemy_power)
 		whatToDo = math.random(1,3)
 		if whatToDo == 1 then
-			for _, enemy in ipairs(harassFleet) do
+			for i, enemy in ipairs(harassFleet) do
 				enemy:orderAttack(p)
 			end
 		elseif whatToDo == 2 then
-			for _, enemy in ipairs(harassFleet) do
+			for i, enemy in ipairs(harassFleet) do
 				enemy:orderAttack(randomPatrolStation)
 			end
 		else
-			for _, enemy in ipairs(harassFleet) do
+			for i, enemy in ipairs(harassFleet) do
 				enemy:orderRoaming()
 			end
 		end
@@ -6708,31 +6697,31 @@ function afterPatrol(delta)
 		plot1 = defeated
 	end
 	nuisanceCount = 0
-	for _, enemy in ipairs(nuisanceList) do
+	for i, enemy in ipairs(nuisanceList) do
 		if enemy:isValid() then
 			nuisanceCount = nuisanceCount + 1
 		end
 	end
 	incursionCount = 0
-	for _, enemy in ipairs(incursionList) do
+	for i, enemy in ipairs(incursionList) do
 		if enemy:isValid() then
 			incursionCount = incursionCount + 1
 		end
 	end
 	attack1count = 0
-	for _, enemy in ipairs(attack1list) do
+	for i, enemy in ipairs(attack1list) do
 		if enemy:isValid() then
 			attack1count = attack1count + 1
 		end
 	end
 	attack2count = 0
-	for _, enemy in pairs(attack2list) do
+	for i, enemy in pairs(attack2list) do
 		if enemy:isValid() then
 			attack2count = attack2count + 1
 		end
 	end
 	attack3count = 0
-	for _, enemy in ipairs(attack3list) do
+	for i, enemy in ipairs(attack3list) do
 		if enemy:isValid() then
 			attack3count = attack3count + 1
 		end
@@ -6753,23 +6742,23 @@ function afterPatrol(delta)
 			for pidx=1,8 do
 				p = getPlayerShip(pidx)
 				if p ~= nil and p:isValid() then
-					p:addToShipLog(_("orders-shipLog", "Stop patrol and Defend Utopia Planitia"),"Magenta")
+					p:addToShipLog(_("UPlanitia1Orders-shipLog", "Stop patrol and Defend Utopia Planitia"),"Magenta")
 				end
 			end
 			closestUtopiaPlayer = closestPlayerTo(stationUtopiaPlanitia)
 			if closestUtopiaPlayer ~= nil then
 				closestUtopiaPlayer_timer = play_button_expire_time
-				stationUtopiaPlanitia:sendCommsMessage(closestUtopiaPlayer, _("audioUPlanitiaDefend-incCall", "Audio message received, auto-transcribed to log, stored for playback: UTPLNT441"))
-				closestUtopiaPlayer:addToShipLog(_("audioUPlanitiaDefend-shipLog", "[UTPLNT441](Utopia Planitia) Our long range sensors show a number of enemy ships approaching. Cease patrolling other stations and defend station Utopia Planitia","Yellow"))
+				stationUtopiaPlanitia:sendCommsMessage(closestUtopiaPlayer, _("UPlanitia1Audio-incCall", "Audio message received, auto-transcribed to log, stored for playback: UTPLNT441"))
+				closestUtopiaPlayer:addToShipLog(_("UPlanitia1Audio-shipLog", "[UTPLNT441](Utopia Planitia) Our long range sensors show a number of enemy ships approaching. Cease patrolling other stations and defend station Utopia Planitia","Yellow"))
 				if defendUtopiaMsgButton == nil then
 					defendUtopiaMsgButton = "defendUtopiaMsgButton"
-					closestUtopiaPlayer:addCustomButton("Relay",defendUtopiaMsgButton,_("audioUPlanitiaDefend-buttonRelay", "|> UTPLNT441"),playDefendUtopiaMsg)
+					closestUtopiaPlayer:addCustomButton("Relay",defendUtopiaMsgButton,_("UPlanitia1Audio-buttonRelay", "|> UTPLNT441"),playDefendUtopiaMsg)
 					defendUtopiaMsgButtonOps = "defendUtopiaMsgButtonOps"
-					closestUtopiaPlayer:addCustomButton(_("Operations"),defendUtopiaMsgButtonOps,_("audioUPlanitiaDefend-buttonOperations", "|> UTPLNT441"),playDefendUtopiaMsg)
+					closestUtopiaPlayer:addCustomButton("Operations",defendUtopiaMsgButtonOps,_("UPlanitia1Audio-buttonOperations", "|> UTPLNT441"),playDefendUtopiaMsg)
 				end
 			end
-			stationUtopiaPlanitia:sendCommsMessage(closestUtopiaPlayer, _("audioUPlanitiaDefend-incCall", "Our long range sensors show a number of enemy ships approaching. Cease patrolling other stations and defend station Utopia Planitia"))
-			primaryOrders = _("audioUPlanitiaDefendOrders-comms", "Defend Utopia Planitia")
+			stationUtopiaPlanitia:sendCommsMessage(closestUtopiaPlayer, _("UPlanitia1Audio-incCall", "Our long range sensors show a number of enemy ships approaching. Cease patrolling other stations and defend station Utopia Planitia"))
+			primaryOrders = _("UPlanitia1AudioOrders-comms", "Defend Utopia Planitia")
 			waveDelayTimer = 120
 			longWave = 0
 			plot1 = defendUtopia
@@ -6799,7 +6788,7 @@ function defendUtopia(delta)
 	if longWave == 0 then
 		if waveDelayTimer < 0 then
 			longWave1List = spawnEnemies(utopiaPlanitiax+irandom(30000,40000),utopiaPlanitiay+irandom(-5000,5000),.5,"Kraylor")
-			for _, enemy in ipairs(longWave1List) do
+			for i, enemy in ipairs(longWave1List) do
 				enemy:orderFlyTowards(utopiaPlanitiax, utopiaPlanitiay)
 			end
 			waveDelayTimer = delta + 120
@@ -6809,7 +6798,7 @@ function defendUtopia(delta)
 	if longWave == 1 then
 		if waveDelayTimer < 0 then
 			longWave2List = spawnEnemies(utopiaPlanitiax+irandom(-40000,-30000),utopiaPlanitiay+irandom(-5000,5000),.5,"Kraylor")
-			for _, enemy in ipairs(longWave2List) do
+			for i, enemy in ipairs(longWave2List) do
 				enemy:orderFlyTowards(utopiaPlanitiax, utopiaPlanitiay)
 			end
 			waveDelayTimer = delta + 120
@@ -6819,13 +6808,13 @@ function defendUtopia(delta)
 	if longWave == 2 then
 		if waveDelayTimer < 0 then
 			wave1count = 0
-			for _, enemy in ipairs(longWave1List) do
+			for i, enemy in ipairs(longWave1List) do
 				if enemy:isValid() then
 					wave1count = wave1count + 1
 				end
 			end
 			wave2count = 0
-			for _, enemy in ipairs(longWave2List) do
+			for i, enemy in ipairs(longWave2List) do
 				if enemy:isValid() then
 					wave2count = wave2count + 1
 				end
@@ -6834,30 +6823,30 @@ function defendUtopia(delta)
 				closestMidWaveUtopiaPlayer = closestPlayerTo(stationUtopiaPlanitia)
 				if closestMidWaveUtopiaPlayer ~= nil then
 					closestMidWaveUtopiaPlayer_timer = play_button_expire_time
-					stationUtopiaPlanitia:sendCommsMessage(closestMidWaveUtopiaPlayer, _("audioUPlanitiaEnnemies-incCall", "Audio message received, auto-transcribed to log, stored for playback: UTPLNT477"))
-					closestMidWaveUtopiaPlayer:addToShipLog(_("audioUPlanitiaEnnemies-shipLog", "[UTPLNT477](Utopia Planitia) You have taken care of the closest enemies. Our extreme range sensors show more, but they should not arrive for a couple of minutes"),"Yellow")
+					stationUtopiaPlanitia:sendCommsMessage(closestMidWaveUtopiaPlayer, _("UPlanitia2Audio-incCall", "Audio message received, auto-transcribed to log, stored for playback: UTPLNT477"))
+					closestMidWaveUtopiaPlayer:addToShipLog(_("UPlanitia2Audio-shipLog", "[UTPLNT477](Utopia Planitia) You have taken care of the closest enemies. Our extreme range sensors show more, but they should not arrive for a couple of minutes"),"Yellow")
 					if utopiaBreakMsgButton == nil then
 						utopiaBreakMsgButton = "utopiaBreakMsgButton"
-						closestMidWaveUtopiaPlayer:addCustomButton("Relay",utopiaBreakMsgButton,_("audioUPlanitiaEnnemies-buttonRelay", "|> UTPLNT477"),playUtopiaBreakMsg)
+						closestMidWaveUtopiaPlayer:addCustomButton("Relay",utopiaBreakMsgButton,_("UPlanitia2Audio-buttonRelay", "|> UTPLNT477"),playUtopiaBreakMsg)
 						utopiaBreakMsgButtonOps = "utopiaBreakMsgButtonOps"
-						closestMidWaveUtopiaPlayer:addCustomButton("Operations",utopiaBreakMsgButtonOps,_("audioUPlanitiaEnnemies-buttonOperations", "|> UTPLNT477"),playUtopiaBreakMsg)
+						closestMidWaveUtopiaPlayer:addCustomButton("Operations",utopiaBreakMsgButtonOps,_("UPlanitia2Audio-buttonOperations", "|> UTPLNT477"),playUtopiaBreakMsg)
 					end
 				end
 				for pidx=1,8 do
 					p = getPlayerShip(pidx)
 					if p ~= nil and p:isValid() then
-						p:addToShipLog(_("audioUPlanitiaEnnemies-shipLog", "Nearest ships cleared. More to come shortly","Magenta"))
+						p:addToShipLog(_("UPlanitia2Audio-shipLog", "Nearest ships cleared. More to come shortly","Magenta"))
 					end
 				end
 				longWave = 3
-				waveDelayTimer = delta + 120
 			end
+			waveDelayTimer = delta + 120
 		end
 	end
 	if longWave == 3 then
 		if waveDelayTimer < 0 then
 			longWave3List = spawnEnemies(utopiaPlanitiax+irandom(-10000,10000),utopiaPlanitiay+irandom(30000,40000),1,"Kraylor")
-			for _, enemy in ipairs(longWave3List) do
+			for i, enemy in ipairs(longWave3List) do
 				enemy:orderFlyTowards(utopiaPlanitiax, utopiaPlanitiay)
 			end
 			waveDelayTimer = delta + 120
@@ -6867,7 +6856,7 @@ function defendUtopia(delta)
 	if longWave == 4 then
 		if waveDelayTimer < 0 then
 			longWave4List = spawnEnemies(utopiaPlanitiax+irandom(-10000,10000),utopiaPlanitiay+irandom(30000,40000),2,"Kraylor")
-			for _, enemy in ipairs(longWave4List) do
+			for i, enemy in ipairs(longWave4List) do
 				enemy:orderFlyTowards(utopiaPlanitiax, utopiaPlanitiay)
 			end
 			waveDelayTimer = delta + 300
@@ -6877,7 +6866,7 @@ function defendUtopia(delta)
 	if longWave == 5 then
 		if waveDelayTimer < 0 then
 			longWave5List = spawnEnemies(utopiaPlanitiax+irandom(-10000,10000),utopiaPlanitiay+irandom(30000,40000),1,"Kraylor")
-			for _, enemy in ipairs(longWave5List) do
+			for i, enemy in ipairs(longWave5List) do
 				enemy:orderFlyTowards(utopiaPlanitiax, utopiaPlanitiay)
 			end
 			waveDelayTimer = delta + 120
@@ -6887,19 +6876,19 @@ function defendUtopia(delta)
 	if longWave == 6 then
 		if waveDelayTimer < 0 then
 			wave3count = 0
-			for _, enemy in ipairs(longWave3List) do
+			for i, enemy in ipairs(longWave3List) do
 				if enemy:isValid() then
 					wave3count = wave3count + 1
 				end
 			end
 			wave4count = 0
-			for _, enemy in ipairs(longWave4List) do
+			for i, enemy in ipairs(longWave4List) do
 				if enemy:isValid() then
 					wave4count = wave4count + 1
 				end
 			end
 			wave5count = 0
-			for _, enemy in ipairs(longWave5List) do
+			for i, enemy in ipairs(longWave5List) do
 				if enemy:isValid() then
 					wave5count = wave5count + 1
 				end
@@ -6950,20 +6939,20 @@ function destroyEnemyStronghold(delta)
 			wp27 = CpuShip():setFaction("Kraylor"):setposition(scarletx+x,scarlety+y):setTemplate("Defense platform"):setCallSign("WP-27")			
 		end
 		strongholdDefense = spawnEnemies(scarletx-5000,scarlety-5000,1,"Kraylor")
-		for _, enemy in ipairs(strongholdDefense) do
+		for i, enemy in ipairs(strongholdDefense) do
 			enemy:orderDefendTarget(stationScarletCitadel)
 		end
 		strongholdOffense = spawnEnemies(scarletx-8000,scarlety-8000,1,"Kraylor")
 		targetPlayer = closestPlayerTo(stationScarletCitadel)
 		if targetPlayer:isValid() then
-			for _, enemy in ipairs(strongholdOffense) do
+			for i, enemy in ipairs(strongholdOffense) do
 				enemy:orderAttack(targetPlayer)
 			end
-			targetPlayer:addToShipLog(string.format(_("-shipLog", "Enemy base nearby located in secctor %s. Fleet assembled near Utopia Planitia to assist if needed. Destroy base."),stationScarletCitadel:getSectorName()),"Magenta")
+			targetPlayer:addToShipLog(string.format(_("strongHold-shipLog", "Enemy base nearby located in sector %s. Fleet assembled near Utopia Planitia to assist if needed. Destroy base."),stationScarletCitadel:getSectorName()),"Magenta")
 		end
 		posse = spawnEnemies(utopiaPlanitiaX,utopiaPlanitiaY+8000,2,"Human Navy")
-		primaryOrders = string.format(_("orders-comms", "Destroy enemy base in sector %s"),stationScarletCitadel:getSectorName())
-		for _, friend in ipairs(posse) do
+		primaryOrders = string.format(_("strongHoldOrders-comms", "Destroy enemy base in sector %s"),stationScarletCitadel:getSectorName())
+		for i, friend in ipairs(posse) do
 			friend:orderStandGround()
 			if #posseShipNames > 0 then
 				ni = math.random(1,#posseShipNames)
@@ -6980,13 +6969,13 @@ function destroyEnemyStronghold(delta)
 			if scarletDanger > 0 then
 				scarletTimer = delta + 300
 				strongholdDefense = spawnEnemies(scarletx-5000,scarlety-5000,scarletDanger,"Kraylor")
-				for _, enemy in ipairs(strongholdDefense) do
+				for i, enemy in ipairs(strongholdDefense) do
 					enemy:orderDefendTarget(stationScarletCitadel)
 				end
 				strongholdOffense = spawnEnemies(scarletx-8000,scarlety-8000,scarletDanger,"Kraylor")
 				targetPlayer = closestPlayerTo(stationScarletCitadel)
 				if targetPlayer:isValid() then
-					for _, enemy in ipairs(strongholdOffense) do
+					for i, enemy in ipairs(strongholdOffense) do
 						enemy:orderAttack(targetPlayer)
 					end
 				end
@@ -7016,7 +7005,7 @@ function nuisance(delta)
 		nuisanceSpawned = "done"
 		asimovx, asimovy = stationAsimov:getPosition()
 		nuisanceList = spawnEnemies(asimovx+irandom(20000,30000),asimovx+irandom(20000,30000),.4,"Kraylor")
-		for _, enemy in ipairs(nuisanceList) do
+		for i, enemy in ipairs(nuisanceList) do
 			enemy:orderFlyTowards(asimovx, asimovy)
 		end
 	end
@@ -7027,19 +7016,19 @@ function nuisance(delta)
 			closestPlayer = closestPlayerTo(stationAsimov)
 			if closestPlayer ~= nil then
 				closestPlayer_timer = play_button_expire_time
-				stationAsimov:sendCommsMessage(closestPlayer, _("audioAsimov-incCall", "Audio message received, auto-transcribed into log, stored for playback: ASMVSNSR003"))
-				closestPlayer:addToShipLog(_("audioAsimov-shipLog", "[ASMVSNSR003](Asimov sensor technician) Our long range sensors show enemies approaching"),"Yellow")
+				stationAsimov:sendCommsMessage(closestPlayer, _("Asimov1Audio-incCall", "Audio message received, auto-transcribed into log, stored for playback: ASMVSNSR003"))
+				closestPlayer:addToShipLog(_("Asimov1Audio-shipLog", "[ASMVSNSR003](Asimov sensor technician) Our long range sensors show enemies approaching"),"Yellow")
 				if playMsgFromAsimovButton == nil then
 					playMsgFromAsimovButton = "playMsgFromAsimovButton"
-					closestPlayer:addCustomButton("Relay",playMsgFromAsimovButton,_("audioAsimov-buttonRelay", "|> ASMVSNSR003"),playAsimovSensorTechMessage)
+					closestPlayer:addCustomButton("Relay",playMsgFromAsimovButton,_("Asimov1Audio-buttonRelay", "|> ASMVSNSR003"),playAsimovSensorTechMessage)
 					playMsgFromAsimovButtonOps = "playMsgFromAsimovButtonOps"
-					closestPlayer:addCustomButton("Operations",playMsgFromAsimovButtonOps,_("audioAsimov-buttonOperations", "|> ASMVSNSR003"),playAsimovSensorTechMessage)
+					closestPlayer:addCustomButton("Operations",playMsgFromAsimovButtonOps,_("Asimov1Audio-buttonOperations", "|> ASMVSNSR003"),playAsimovSensorTechMessage)
 				end		
 			end
 		end
 	end
 	enemy_count = 0
-	for _, enemy in ipairs(nuisanceList) do
+	for i, enemy in ipairs(nuisanceList) do
 		if enemy:isValid() then
 			enemy_count = enemy_count + 1
 		end
@@ -7071,7 +7060,7 @@ function sickMiner(delta)
 			sickMinerStationChoice = math.random(1,5)
 			if sickMinerStationChoice == 1 then
 				sickMinerStation = stationKrik
-			elseif sickMinerStationChoice == 2 then
+			elseif sickMinerStationChoicbaye == 2 then
 				sickMinerStation = stationKrak
 			elseif sickMinerStationChoice == 3 then
 				sickMinerStation = stationKruk
@@ -7080,17 +7069,17 @@ function sickMiner(delta)
 			else
 				sickMinerStation = stationImpala
 			end
-			plot2reminder = string.format(_("audioSickMiner1-", "Pick up Joshua Kojack from %s in sector %s and take him to Bethesda"),sickMinerStation:getCallSign(),sickMinerStation:getSectorName())
+			plot2reminder = string.format(_("Kojak1AudioOrders-comms", "Pick up Joshua Kojak from %s in sector %s and take him to Bethesda"),sickMinerStation:getCallSign(),sickMinerStation:getSectorName())
 			closestSickMinerPlayer = closestPlayerTo(sickMinerStation)
 			if closestSickMinerPlayer ~= nil then
 				closestSickMinerPlayer_timer = play_button_expire_time
-				sickMinerStation:sendCommsMessage(closestSickMinerPlayer, _("audioSickMiner1-incCall", "Audio message received, auto-transcribed into log, stored for playback: MINSTN014"))
-				closestSickMinerPlayer:addToShipLog(string.format(_("audioSickMiner1-shipLog", "[MINSTN014](%s in sector %s) Joshua Kojak has come down with something our autodoc can't handle. He's supposed to be helping us mine these asteroids, but he can't do us any good while he's sick. Can you transport him to Bethesda station? I hear they've got some clever doctors there that might help."),sickMinerStation:getCallSign(),sickMinerStation:getSectorName()),"Yellow")
+				sickMinerStation:sendCommsMessage(closestSickMinerPlayer, _("Kojak1Audio-incCall", "Audio message received, auto-transcribed into log, stored for playback: MINSTN014"))
+				closestSickMinerPlayer:addToShipLog(string.format(_("Kojak1Audio-shipLog", "[MINSTN014](%s in sector %s) Joshua Kojak has come down with something our autodoc can't handle. He's supposed to be helping us mine these asteroids, but he can't do us any good while he's sick. Can you transport him to Bethesda station? I hear they've got some clever doctors there that might help."),sickMinerStation:getCallSign(),sickMinerStation:getSectorName()),"Yellow")
 				if playMsgFromSickStationButton == nil then
 					playMsgFromSickStationButton = "playMsgFromSickStationButton"
-					closestSickMinerPlayer:addCustomButton("Relay",playMsgFromSickStationButton,_("audioSickMiner1-buttonRelay", "|> MINSTN014"),playSickStationMessage)
+					closestSickMinerPlayer:addCustomButton("Relay",playMsgFromSickStationButton,_("Kojak1Audio-buttonRelay", "|> MINSTN014"),playSickStationMessage)
 					playMsgFromSickStationButtonOps = "playMsgFromSickStationButtonOps"
-					closestSickMinerPlayer:addCustomButton("Operations",playMsgFromSickStationButtonOps,_("audioSickMiner1-buttonOperations", "|> MINSTN014"),playSickStationMessage)
+					closestSickMinerPlayer:addCustomButton("Operations",playMsgFromSickStationButtonOps,_("Kojak1Audio-buttonOperations", "|> MINSTN014"),playSickStationMessage)
 				end				
 			end
 			sickMinerState = "sick on station"
@@ -7113,14 +7102,14 @@ function getSickMinerFromStation(delta)
 			if p ~= nil and p:isValid() and p:isDocked(sickMinerStation) then
 				p.sickMinerAboard = true
 				sickMinerState = "aboard player ship"
-				sickMinerStation:sendCommsMessage(p,_("audioSickMiner2-incCall", "Audio message received, auto-transcribed into log, stored for playback: MINSTN019"))
-				p:addToShipLog(_("audioSickMiner2-shipLog", "[MINSTN019]Thanks for getting Joshua aboard. Please take him to Bethesda"),"Yellow")
+				sickMinerStation:sendCommsMessage(p,_("Kojak2Audio-incCall", "Audio message received, auto-transcribed into log, stored for playback: MINSTN019"))
+				p:addToShipLog(_("Kojak2Audio-shipLog", "[MINSTN019]Thanks for getting Joshua aboard. Please take him to Bethesda"),"Yellow")
 				sickMinerShip = p
 				if playMsg2FromSickStationButton == nil then
 					playMsg2FromSickStationButton = "playMsg2FromSickStationButton"
-					sickMinerShip:addCustomButton("Relay",playMsg2FromSickStationButton,_("audioSickMiner2-buttonRelay", "|> MINSTN019"),playSickStationMessage2)
+					sickMinerShip:addCustomButton("Relay",playMsg2FromSickStationButton,_("Kojak2Audio-buttonRelay", "|> MINSTN019"),playSickStationMessage2)
 					playMsg2FromSickStationButtonOps = "playMsg2FromSickStationButtonOps"
-					sickMinerShip:addCustomButton("Operations",playMsg2FromSickStationButtonOps,_("audioSickMiner2-buttonOperations", "|> MINSTN019"),playSickStationMessage2)
+					sickMinerShip:addCustomButton("Operations",playMsg2FromSickStationButtonOps,_("Kojak2Audio-buttonOperations", "|> MINSTN019"),playSickStationMessage2)
 				end
 				sickMinerShip:addReputationPoints(15)
 				plot2 = takeSickMinerToBethesda
@@ -7140,13 +7129,13 @@ function takeSickMinerToBethesda(delta)
 	if sickMinerState == "aboard player ship" then
 		if sickMinerShip:isDocked(stationBethesda) then
 			sickMinerState = "at Bethesda"
-			stationBethesda:sendCommsMessage(sickMinerShip,_("audioBethesda1-incCall", "Audio message received, auto-transcribed into log, stored for playback: BTHSDA002"))
-			sickMinerShip:addToShipLog(_("audioBethesda1-shipLog", "[BTHSDA002] Joshua Kojak is being treated. He shows every sign of recovering"),"Yellow")
+			stationBethesda:sendCommsMessage(sickMinerShip,_("Kojak3Audio-incCall", "Audio message received, auto-transcribed into log, stored for playback: BTHSDA002"))
+			sickMinerShip:addToShipLog(_("Kojak3Audio-shipLog", "[BTHSDA002] Joshua Kojak is being treated. He shows every sign of recovering"),"Yellow")
 			if playMsgFromBethesdaButton == nil then
 				playMsgFromBethesdaButton = "playMsgFromBethesdaButton"
-				sickMinerShip:addCustomButton("Relay",playMsgFromBethesdaButton,_("audioBethesda1-buttonRelay", "|> BTHSDA002"),playBethesdaStationMessage)
+				sickMinerShip:addCustomButton("Relay",playMsgFromBethesdaButton,_("Kojak3Audio-buttonRelay", "|> BTHSDA002"),playBethesdaStationMessage)
 				playMsgFromBethesdaButtonOps = "playMsgFromBethesdaButtonOps"
-				sickMinerShip:addCustomButton("Operations",playMsgFromBethesdaButtonOps,_("audioBethesda1-buttonOperations", "|> BTHSDA002"),playBethesdaStationMessage)
+				sickMinerShip:addCustomButton("Operations",playMsgFromBethesdaButtonOps,_("Kojak3Audio-buttonOperations", "|> BTHSDA002"),playBethesdaStationMessage)
 			end
 			sickMinerShip:addReputationPoints(30)
 			minerRecoveryTimer = random(90,120)
@@ -7171,14 +7160,14 @@ function minerRecovering(delta)
 			if closestBethesdaPlayer == nil then
 				closestBethesdaPlayer = getPlayerShip(-1)
 			end
-			stationBethesda:sendCommsMessage(closestBethesdaPlayer, _("audioBethesda2-incCall", "Audio message received, auto-transcribed into log, stored for playback: BTHSDA034"))
-			closestBethesdaPlayer:addToShipLog(_("audioBethesda2-shipLog", "[BTHSDA034](Joshua Kojak) Thanks for bringing me to Bethesda. I'm feeling much better. I'm transmitting my research on power systems and exotic metals. You may find it interesting. Mining leaves me lots of time for thinking"),"Yellow")
+			stationBethesda:sendCommsMessage(closestBethesdaPlayer, _("Kojak4Audio-incCall", "Audio message received, auto-transcribed into log, stored for playback: BTHSDA034"))
+			closestBethesdaPlayer:addToShipLog(_("Kojak4Audio-shipLog", "[BTHSDA034](Joshua Kojak) Thanks for bringing me to Bethesda. I'm feeling much better. I'm transmitting my research on power systems and exotic metals. You may find it interesting. Mining leaves me lots of time for thinking"),"Yellow")
 			if playMsgKojakButton == nil then
 				closestBethesdaPlayer_timer = play_button_expire_time
 				playMsgKojakButton = "playMsgKojakButton"
-				closestBethesdaPlayer:addCustomButton("Relay",playMsgKojakButton,_("audioBethesda2-buttonRelay", "|> BTHSDA034"),playKojakThanksMessage)
+				closestBethesdaPlayer:addCustomButton("Relay",playMsgKojakButton,_("Kojak4Audio-buttonRelay", "|> BTHSDA034"),playKojakThanksMessage)
 				playMsgKojakButtonOps = "playMsgKojakButtonOps"
-				closestBethesdaPlayer:addCustomButton("Operations",playMsgKojakButtonOps,_("audioBethesda2-buttonOperations", "|> BTHSDA034"),playKojakThanksMessage)
+				closestBethesdaPlayer:addCustomButton("Operations",playMsgKojakButtonOps,_("Kojak4Audio-buttonOperations", "|> BTHSDA034"),playKojakThanksMessage)
 			end
 			closestBethesdaPlayer:addReputationPoints(15.00)
 			closestBethesdaPlayer.receivedMinerResearch = true
@@ -7196,13 +7185,13 @@ function minerScienceDiscovery(delta)
 			if closestBethesdaPlayer:isValid() and closestBethesdaPlayer.receivedMinerResearch then
 				sickMinerState = "sent to engineer"
 				scienceSendMessage = "scienceSendMessage"
-				closestBethesdaPlayer:addCustomMessage("Science",scienceSendMessage,_("minerDiscovery-msgScience", "While reading through Joshua Kojak's research, you discover a potential application to on-board ship systems. Click the 'Send to engineer' button to submit insight to engineering. You may find the button under the 'scanning' label"))
+				closestBethesdaPlayer:addCustomMessage("Science",scienceSendMessage,_("Kojak5-msgScience", "While reading through Joshua Kojak's research, you discover a potential application to on-board ship systems. Click the 'Send to engineer' button to submit insight to engineering. You may find the button under the 'scanning' label"))
 				operationsSendMessage = "operationsSendMessage"
-				closestBethesdaPlayer:addCustomMessage("Operations",operationsSendMessage,_("minerDiscovery-msgOperations", "While reading through Joshua Kojak's research, you discover a potential application to on-board ship systems. Click the 'Send to engineer' button to submit insight to engineering."))
+				closestBethesdaPlayer:addCustomMessage("Operations",operationsSendMessage,_("Kojak5-msgOperations", "While reading through Joshua Kojak's research, you discover a potential application to on-board ship systems. Click the 'Send to engineer' button to submit insight to engineering."))
 				scienceSendButton = "scienceSendButton"
-				closestBethesdaPlayer:addCustomButton("Science",scienceSendButton,_("minerDiscovery-buttonScience", "Send to engineer"),insightToEngineer)
+				closestBethesdaPlayer:addCustomButton("Science",scienceSendButton,_("Kojak5-buttonScience", "Send to engineer"),insightToEngineer)
 				operationsSendButton = "operationsSendButton"
-				closestBethesdaPlayer:addCustomButton("Operations",operationsSendButton,_("minerDiscovery-buttonOperations", "Send to engineer"),insightToEngineer)
+				closestBethesdaPlayer:addCustomButton("Operations",operationsSendButton,_("Kojak5-buttonOperations", "Send to engineer"),insightToEngineer)
 				engineerEvaluateMessageTimer = 30
 				plot2 = minerEngineerEvaluate
 			end
@@ -7223,13 +7212,13 @@ function minerEngineerEvaluate(delta)
 	if sickMinerState == "sent to weapons" then
 		if closestBethesdaPlayer:isValid() and closestBethesdaPlayer.receivedMinerResearch then
 			engineerSendMessage = "engineerSendMessage"
-			closestBethesdaPlayer:addCustomMessage("Engineering",engineerSendMessage,_("suggestWeapons-msgEngineer", "The science officer sent you some thoughts on Joshua Kojak's research. You think it applies to beam weapon improvement. Click the 'Send to weapons' button to suggest changes to weapons"))
+			closestBethesdaPlayer:addCustomMessage("Engineering",engineerSendMessage,_("Kojak6-msgEngineer", "The science officer sent you some thoughts on Joshua Kojak's research. You think it applies to beam weapon improvement. Click the 'Send to weapons' button to suggest changes to weapons"))
 			engineerPlusSendMessage = "engineerPlusSendMessage"
-			closestBethesdaPlayer:addCustomMessage("Engineering+",engineerPlusSendMessage,_("suggestWeapons-msgEngineer+", "The science officer sent you some thoughts on Joshua Kojak's research. You think it applies to beam weapon improvement. Click the 'Send to weapons' button to suggest changes to weapons"))
+			closestBethesdaPlayer:addCustomMessage("Engineering+",engineerPlusSendMessage,_("Kojak6-msgEngineer+", "The science officer sent you some thoughts on Joshua Kojak's research. You think it applies to beam weapon improvement. Click the 'Send to weapons' button to suggest changes to weapons"))
 			engineerSendToWeaponsButton = "engineerSendToWeaponsButton"
-			closestBethesdaPlayer:addCustomButton("Engineering",engineerSendToWeaponsButton,_("suggestWeapons-buttonEngineer", "Send to weapons"),insightToWeapons)
+			closestBethesdaPlayer:addCustomButton("Engineering",engineerSendToWeaponsButton,_("Kojak6-buttonEngineer", "Send to weapons"),insightToWeapons)
 			engineerPlusSendToWeaponsButton = "engineerPlusSendToWeaponsButton"
-			closestBethesdaPlayer:addCustomButton("Engineering+",engineerPlusSendToWeaponsButton,_("suggestWeapons-buttonEngineer+", "Send to weapons"),insightToWeapons)
+			closestBethesdaPlayer:addCustomButton("Engineering+",engineerPlusSendToWeaponsButton,_("Kojak6-buttonEngineer+", "Send to weapons"),insightToWeapons)
 			weaponsEvaluateMessageTimer = 30
 			plot2 = minerWeaponsApply
 		end
@@ -7256,13 +7245,13 @@ function minerWeaponsApply(delta)
 	if sickMinerState == "sent to base" then
 		if closestBethesdaPlayer:isValid() and closestBethesdaPlayer.receivedMinerResearch then
 			weaponsSendMessage = "weaponsSendMessage"
-			closestBethesdaPlayer:addCustomMessage("Weapons",weaponsSendMessage,_("instructions-msgWeapons", "The engineer sent you some thoughts on Joshua Kojak's research. You know how to apply it to the beam weapons, but lack the tools to do it immediately. Click the 'Send to Utopia Planitia' button to transmit upgrade instructions to Utopia Planitia station"))
+			closestBethesdaPlayer:addCustomMessage("Weapons",weaponsSendMessage,_("Kojak7-msgWeapons", "The engineer sent you some thoughts on Joshua Kojak's research. You know how to apply it to the beam weapons, but lack the tools to do it immediately. Click the 'Send to Utopia Planitia' button to transmit upgrade instructions to Utopia Planitia station"))
 			tacticalSendMessage = "tacticalSendMessage"
-			closestBethesdaPlayer:addCustomMessage("Tactical",tacticalSendMessage,_("instructions-msgTactical", "The engineer sent you some thoughts on Joshua Kojak's research. You know how to apply it to the beam weapons, but lack the tools to do it immediately. Click the 'Send to Utopia Planitia' button to transmit upgrade instructions to Utopia Planitia station"))
+			closestBethesdaPlayer:addCustomMessage("Tactical",tacticalSendMessage,_("Kojak7-msgTactical", "The engineer sent you some thoughts on Joshua Kojak's research. You know how to apply it to the beam weapons, but lack the tools to do it immediately. Click the 'Send to Utopia Planitia' button to transmit upgrade instructions to Utopia Planitia station"))
 			weaponsSendButton = "weaponsSendButton"
-			closestBethesdaPlayer:addCustomButton("Weapons",weaponsSendButton,_("instructions-buttonWeapons", "Send to Utopia Planitia"),insightToBase)
+			closestBethesdaPlayer:addCustomButton("Weapons",weaponsSendButton,_("Kojak7-buttonWeapons", "Send to Utopia Planitia"),insightToBase)
 			tacticalSendButton = "tacticalSendButton"
-			closestBethesdaPlayer:addCustomButton("Tactical",tacticalSendButton,_("instructions-buttonTactical", "Send to Utopia Planitia"),insightToBase)
+			closestBethesdaPlayer:addCustomButton("Tactical",tacticalSendButton,_("Kojak7-buttonTactical", "Send to Utopia Planitia"),insightToBase)
 			weaponsDecideMessageTimer = 30
 			plot2 = minerWeaponsDecide
 		end
@@ -7288,8 +7277,8 @@ function minerWeaponsDecide(delta)
 	end
 	if sickMinerState == "base processed" then
 		if closestBethesdaPlayer:isValid() and closestBethesdaPlayer.receivedMinerResearch then
-			stationUtopiaPlanitia:sendCommsMessage(closestBethesdaPlayer,_("UtopiaPlanitia3-incCall", "Thanks for the information. We can upgrade you next time you dock."))
-			closestBethesdaPlayer:addToShipLog(_("UtopiaPlanitia3-shipLog", "[Utopia Planitia] Thanks for the information. We can upgrade you next time you dock","Magenta"))
+			stationUtopiaPlanitia:sendCommsMessage(closestBethesdaPlayer,_("Koja8kUP-incCall", "Thanks for the information. We can upgrade you next time you dock."))
+			closestBethesdaPlayer:addToShipLog(_("Kojak8UP-shipLog", "[Utopia Planitia] Thanks for the information. We can upgrade you next time you dock","Magenta"))
 		end
 		plot2 = nil
 		minerUpgrade = true
@@ -7330,19 +7319,19 @@ function incursion(delta)
 			if closestIncursionPlayer == nil then
 				closestIncursionPlayer = getPlayerShip(-1)
 			end
-			stationUtopiaPlanitia:sendCommsMessage(closestIncursionPlayer, _("audioUPlanitiaIncursion-incCall", "Audio message received, auto-transcribed into log, stored for playback: UTPLNT103"))
-			closestIncursionPlayer:addToShipLog(_("audioUPlanitiaIncursion-shipLog", "[UTPLNT103](Utopia Planitia sensor technician) Our long range sensors show enemies approaching"),"Yellow")
+			stationUtopiaPlanitia:sendCommsMessage(closestIncursionPlayer, _("UPlanitia3Audio-incCall", "Audio message received, auto-transcribed into log, stored for playback: UTPLNT103"))
+			closestIncursionPlayer:addToShipLog(_("UPlanitia3Audio-shipLog", "[UTPLNT103](Utopia Planitia sensor technician) Our long range sensors show enemies approaching"),"Yellow")
 			if playUtopiaPlanitiaSensorMsgButton == nil then
 				closestIncursionPlayer_timer = play_button_expire_time
 				playUtopiaPlanitiaSensorMsgButton = "playUtopiaPlanitiaSensorMsgButton"
-				closestIncursionPlayer:addCustomButton("Relay",playUtopiaPlanitiaSensorMsgButton,_("audioUPlanitiaIncursion-buttonRelay", "|> UTPLNT103"),playUtopiaPlanitiaSensorTechMessage)
+				closestIncursionPlayer:addCustomButton("Relay",playUtopiaPlanitiaSensorMsgButton,_("UPlanitia3Audio-buttonRelay", "|> UTPLNT103"),playUtopiaPlanitiaSensorTechMessage)
 				playUtopiaPlanitiaSensorMsgButtonOps = "playUtopiaPlanitiaSensorMsgButtonOps"
-				closestIncursionPlayer:addCustomButton("Operations",playUtopiaPlanitiaSensorMsgButtonOps,_("audioUPlanitiaIncursion-buttonOperations", "|> UTPLNT103"),playUtopiaPlanitiaSensorTechMessage)
+				closestIncursionPlayer:addCustomButton("Operations",playUtopiaPlanitiaSensorMsgButtonOps,_("UPlanitia3Audio-buttonOperations", "|> UTPLNT103"),playUtopiaPlanitiaSensorTechMessage)
 			end
 		end
 	end
 	enemy_count = 0
-	for _, enemy in ipairs(incursionList) do
+	for i, enemy in ipairs(incursionList) do
 		if enemy:isValid() then
 			enemy_count = enemy_count + 1
 		end
@@ -7375,8 +7364,8 @@ function nabbitRideRequest()
 		if closestNabbitPlayer == nil then
 			closestNabbitPlayer = getPlayerShip(-1)
 		end
-		closestNabbitPlayer:addToShipLog(string.format(_("nabbit-shipLog", "[%s in sector %s] Engineer Dan McNabbit requests a ride to Armstrong"),nabbitStation:getCallSign(),nabbitStation:getSectorName()),"Magenta")
-		plot3reminder = string.format(_("nabbit-comms", "Pick up Dan McNabbit from %s in sector %s and take him to Armstrong"),nabbitStation:getCallSign(),nabbitStation:getSectorName())
+		closestNabbitPlayer:addToShipLog(string.format(_("Nabbit1-shipLog", "[%s in sector %s] Engineer Dan McNabbit requests a ride to Armstrong"),nabbitStation:getCallSign(),nabbitStation:getSectorName()),"Magenta")
+		plot3reminder = string.format(_("Nabbit1Orders-comms", "Pick up Dan McNabbit from %s in sector %s and take him to Armstrong"),nabbitStation:getCallSign(),nabbitStation:getSectorName())
 		plot3 = getNabbit
 	else
 		plot3 = nil
@@ -7393,7 +7382,7 @@ function getNabbit(delta)
 				if p:isDocked(nabbitStation) then
 					nabbitShip = p
 					nabbitShip.nabbitAboard = true
-					nabbitShip:addToShipLog(_("nabbit-shipLog", "Engineer Dan McNabbit aboard and ready to go to Armstrong"),"Magenta")
+					nabbitShip:addToShipLog(_("Nabbit2-shipLog", "Engineer Dan McNabbit aboard and ready to go to Armstrong"),"Magenta")
 					nabbitShip:addReputationPoints(5)
 					plot3 = dropNabbit
 				end
@@ -7416,8 +7405,8 @@ function dropNabbit(delta)
 	plot3name = "dropNabbit"
 	if nabbitShip:isValid() and nabbitShip.nabbitAboard and stationArmstrong:isValid() then
 		if nabbitShip:isDocked(stationArmstrong) then
-			stationArmstrong:sendCommsMessage(nabbitShip,_("audioArmstrong-incCall", "Audio message received, auto-transcribed into log, stored for playback: ASTGDN038"))
-			nabbitShip:addToShipLog(_("audioArmstrong-shipLog", "[ASTGDN038](Dan McNabbit) Thanks for the ride. I've tuned your impulse engines en route. I transmitted my engine tuning parameters to Utopia Planitia. Expect faster impulse speeds","Yellow"))
+			stationArmstrong:sendCommsMessage(nabbitShip,_("Nabbit3Audio-incCall", "Audio message received, auto-transcribed into log, stored for playback: ASTGDN038"))
+			nabbitShip:addToShipLog(_("Nabbit3Audio-shipLog", "[ASTGDN038](Dan McNabbit) Thanks for the ride. I've tuned your impulse engines en route. I transmitted my engine tuning parameters to Utopia Planitia. Expect faster impulse speeds","Yellow"))
 			nabbitShip:setImpulseMaxSpeed(nabbitShip:getImpulseMaxSpeed()*1.2)
 			nabbitShip.nabbitUpgrade = true
 			nabbitUpgrade = true
@@ -7427,9 +7416,9 @@ function dropNabbit(delta)
 			removeGMFunction("Start p 3 McNabbit ride")
 			if playNabbitTuneMsgButton == nil then
 				playNabbitTuneMsgButton = "playNabbitTuneMsgButton"
-				nabbitShip:addCustomButton("Relay",playNabbitTuneMsgButton,_("audioArmstrong-buttonRelay", "|> ASTGDN038"),playNabbitTune)
+				nabbitShip:addCustomButton("Relay",playNabbitTuneMsgButton,_("Nabbit3Audio-buttonRelay", "|> ASTGDN038"),playNabbitTune)
 				playNabbitTuneMsgButtonOps = "playNabbitTuneMsgButtonOps"
-				nabbitShip:addCustomButton("Operations",playNabbitTuneMsgButtonOps,_("audioArmstrong-buttonOperations", "|> ASTGDN038"),playNabbitTune)
+				nabbitShip:addCustomButton("Operations",playNabbitTuneMsgButtonOps,_("Nabbit3Audio-buttonOperations", "|> ASTGDN038"),playNabbitTune)
 			end
 		end
 	end
@@ -7445,7 +7434,7 @@ function attack1(delta)
 	if attack1spawned == "ready" then
 		attack1spawned = "done"
 		attack1list = spawnEnemies(armstrongx+irandom(-5000,5000),armstrongy+irandom(-45000,-40000),1.3,"Exuari")
-		for _, enemy in ipairs(attack1list) do
+		for i, enemy in ipairs(attack1list) do
 			enemy:orderFlyTowards(armstrongx, armstrongy)
 		end
 	end
@@ -7462,7 +7451,7 @@ function attack1(delta)
 		end
 	end
 	enemy_count = 0
-	for _, enemy in ipairs(attack1list) do
+	for i, enemy in ipairs(attack1list) do
 		if enemy:isValid() then
 			enemy_count = enemy_count + 1
 		end
@@ -7487,7 +7476,7 @@ function stowawayMessage()
 			closestLisbonPlayer = getPlayerShip(-1)
 		end
 		farthestTransport = transportList[1]
-		for _, t in ipairs(transportList) do
+		for i, t in ipairs(transportList) do
 			if t:isValid() then
 				if distance(stationBethesda, t) > distance(stationBethesda, farthestTransport) then
 					farthestTransport = t
@@ -7496,17 +7485,17 @@ function stowawayMessage()
 		end
 		stowawayTransport = farthestTransport
 		stowawayName = stowawayTransport:getCallSign()
-		stationBethesda:sendCommsMessage(closestLisbonPlayer,_("audioBethesda3-incCall", "Audio message received, auto-transcribed into log, stored for playback: BTHSDA271"))
-		closestLisbonPlayer:addToShipLog(string.format(_("audioBethesda3-shipLog", "[BTHSDA271] Commander Lisbon reports her child stowed away on a freighter. After extensive investigation, she believes Francis is aboard %s currently in sector %s\nShe requests a rendezvous with the freighter to bring back her child"),stowawayName,stowawayTransport:getSectorName()),"Yellow")
+		stationBethesda:sendCommsMessage(closestLisbonPlayer,_("Lisbon1Audio-incCall", "Audio message received, auto-transcribed into log, stored for playback: BTHSDA271"))
+		closestLisbonPlayer:addToShipLog(string.format(_("Lisbon1Audio-shipLog", "[BTHSDA271] Commander Lisbon reports her child stowed away on a freighter. After extensive investigation, she believes Francis is aboard %s currently in sector %s\nShe requests a rendezvous with the freighter to bring back her child"),stowawayName,stowawayTransport:getSectorName()),"Yellow")
 		if playLisbonMsgButton == nil then
 			closestLisbonPlayer_timer = play_button_expire_time
 			playLisbonMsgButton = "playLisbonMsgButton"
-			closestLisbonPlayer:addCustomButton("Relay",playLisbonMsgButton,_("audioBethesda3-buttonRelay", "|> BTHSDA271"),playLisbonRequestMessage)
+			closestLisbonPlayer:addCustomButton("Relay",playLisbonMsgButton,_("Lisbon1Audio-buttonRelay", "|> BTHSDA271"),playLisbonRequestMessage)
 			playLisbonMsgButtonOps = "playLisbonMsgButtonOps"
-			closestLisbonPlayer:addCustomButton("Operations",playLisbonMsgButtonOps,_("audioBethesda3-buttonOperations", "|> BTHSDA271"),playLisbonRequestMessage)
+			closestLisbonPlayer:addCustomButton("Operations",playLisbonMsgButtonOps,_("Lisbon1Audio-buttonOperations", "|> BTHSDA271"),playLisbonRequestMessage)
 		end
 		plot4 = getStowaway
-		plot4reminder = string.format(_("audioBethesda3-comms", "Retrieve Francis from freighter %s last reported in sector %s and return child to station Bethesda"),stowawayName,stowawayTransport:getSectorName())
+		plot4reminder = string.format(_("Lisbon1AudioOrders-comms", "Retrieve Francis from freighter %s last reported in sector %s and return child to station Bethesda"),stowawayName,stowawayTransport:getSectorName())
 	else
 		plot4reminder = nil
 		plot4 = nil
@@ -7521,8 +7510,8 @@ function getStowaway(delta)
 			if distance(stowawayTransport,p) < 500 then
 				p.francisAboard = true
 				francisShip = p
-				francisShip:addToShipLog(_("francis-shipLog", "The stowaway, Francis, is aboard. Commander Lisbon awaits at Bethesda"),"Magenta")
-				plot4reminder = string.format(_("francis-comms", "%s: Return Commander Lisbon's child to station Bethesda"),francisShip:getCallSign())
+				francisShip:addToShipLog(_("Lisbon2-shipLog", "The stowaway, Francis, is aboard. Commander Lisbon awaits at Bethesda"),"Magenta")
+				plot4reminder = string.format(_("Lisbon2Orders-comms", "%s: Return Commander Lisbon's child to station Bethesda"),francisShip:getCallSign())
 				plot4 = returnStowaway
 			end
 		end
@@ -7538,9 +7527,9 @@ function returnStowaway(delta)
 	if francisShip:isValid() then
 		if stationBethesda ~= nil and stationBethesda:isValid() then
 			if francisShip:isDocked(stationBethesda) and francisShip.francisAboard then
-				francisShip:addToShipLog(_("returnStowaway-shipLog", "[Commander Lisbon] Thanks for bringing Francis back. I am entrusting you with my beam system cooling algorithm research. Take it to station Utopia Planitia so that they can decrypt it and it may be applied to human navy ships"),"Magenta") 
+				francisShip:addToShipLog(_("Lisbon3-shipLog", "[Commander Lisbon] Thanks for bringing Francis back. I am entrusting you with my beam system cooling algorithm research. Take it to station Utopia Planitia so that they can decrypt it and it may be applied to human navy ships"),"Magenta") 
 				plot4 = deliverAlgorithm
-				plot4reminder = string.format(_("returnStowaway-comms", "%s: Deliver Commander Lisbon's encrypted beam system cooling algorithm to station Utopia Planitia"),francisShip:getCallSign())
+				plot4reminder = string.format(_("Lisbon3Orders-comms", "%s: Deliver Commander Lisbon's encrypted beam system cooling algorithm to station Utopia Planitia"),francisShip:getCallSign())
 				francisShip.lisbonAlgorithm = true
 			end
 		else
@@ -7558,7 +7547,7 @@ function deliverAlgorithm(delta)
 	if francisShip:isValid() then
 		if francisShip:isDocked(stationUtopiaPlanitia) then
 			if francisShip.lisbonAlgorithm then
-				francisShip:addToShipLog(_("-shipLog", "[Utopia Planitia] Received Commander Lisbon's beam cooling research. Upgrade available to human navy ships"),"Magenta")
+				francisShip:addToShipLog(_("Lisbon4-shipLog", "[Utopia Planitia] Received Commander Lisbon's beam cooling research. Upgrade available to human navy ships"),"Magenta")
 				lisbonUpgrade = true
 				plot4 = nil
 				plot4reminder = nil
@@ -7574,12 +7563,12 @@ function attack2(delta)
 	if attack2spawned == "ready" then
 		attack2list = spawnEnemies(asimovx+irandom(-45000,-40000),asimovy+irandom(-5000,5000),1.6,"Kraylor")
 		attack2spawned = "done"
-		for _, enemy in ipairs(attack2list) do
+		for i, enemy in ipairs(attack2list) do
 			enemy:orderFlyTowards(asimovx, asimovy)
 		end
 	end
 	enemy_count = 0
-	for _, enemy in ipairs(attack2list) do
+	for i, enemy in ipairs(attack2list) do
 		if enemy:isValid() then
 			enemy_count = enemy_count + 1
 		end
@@ -7599,7 +7588,7 @@ function jumpStart(delta)
 		x, y = cp:getPosition()
 		objList = getObjectsInRadius(x, y, 30000)
 		nebulaList = {}
-		for _, obj in ipairs(objList) do
+		for i, obj in ipairs(objList) do
 			if obj.typeName == "Nebula" then
 				table.insert(nebulaList,obj)
 			end
@@ -7626,11 +7615,11 @@ function jumpStart(delta)
 			ay = y + ay
 		end
 		jAsimov = spawnEnemies(ax, ay, .5)
-		for _, enemy in ipairs(jAsimov) do
+		for i, enemy in ipairs(jAsimov) do
 			enemy:orderFlyTowards(asimovx,asimovy)
 		end
 		jPlayer = spawnEnemies(ax, ay, .5)
-		for _, enemy in ipairs(jPlayer) do
+		for i, enemy in ipairs(jPlayer) do
 			enemy:orderAttack(cp)
 		end
 		plot11 = nil
@@ -7648,7 +7637,7 @@ function attack5(delta)
 	if attack5spawned == "ready" then
 		attack5list = spawnEnemies(neb2x,neb2y,1.8,"Kraylor")
 		attack5spawned = "done"
-		for _, enemy in ipairs(attack5list) do
+		for i, enemy in ipairs(attack5list) do
 			enemy:orderStandGround()
 			if difficulty > 1 then
 				enemy:setWarpDrive(true)
@@ -7667,7 +7656,7 @@ function ambush5(delta)
 		if p ~= nil then
 			pDist = distance(p,neb2)
 			if math.random() > pDist/30000 then
-				for _, enemy in ipairs(attack5list) do
+				for i, enemy in ipairs(attack5list) do
 					enemy:orderAttack(p)
 				end
 				plot10 = pursue5
@@ -7676,7 +7665,7 @@ function ambush5(delta)
 			end
 		end		
 		enemy_count = 0
-		for _, enemy in ipairs(attack5list) do
+		for i, enemy in ipairs(attack5list) do
 			if enemy:isValid() then
 				enemy_count = enemy_count + 1
 			end
@@ -7690,7 +7679,7 @@ end
 function pursue5()
 	plot10name = "pursue4"
 	enemy_count = 0
-	for _, enemy in ipairs(attack5list) do
+	for i, enemy in ipairs(attack5list) do
 		if enemy:isValid() then
 			enemy_count = enemy_count + 1
 		end
@@ -7710,7 +7699,7 @@ function attack4(delta)
 	if attack4spawned == "ready" then
 		attack4list = spawnEnemies(neb1x,neb1y,1.6,"Kraylor")
 		attack4spawned = "done"
-		for _, enemy in ipairs(attack4list) do
+		for i, enemy in ipairs(attack4list) do
 			enemy:orderStandGround()
 			if difficulty > 1 then
 				enemy:setWarpDrive(true)
@@ -7730,7 +7719,7 @@ function ambush4(delta)
 		if p ~= nil then
 			pDist = distance(p,neb1)
 			if math.random() > pDist/30000 then
-				for _, enemy in ipairs(attack4list) do
+				for i, enemy in ipairs(attack4list) do
 					enemy:orderAttack(p)
 				end
 				plot9 = pursue4
@@ -7739,7 +7728,7 @@ function ambush4(delta)
 			end
 		end		
 		enemy_count = 0
-		for _, enemy in ipairs(attack4list) do
+		for i, enemy in ipairs(attack4list) do
 			if enemy:isValid() then
 				enemy_count = enemy_count + 1
 			end
@@ -7753,7 +7742,7 @@ end
 function pursue4()
 	plot9name = "pursue4"
 	enemy_count = 0
-	for _, enemy in ipairs(attack4list) do
+	for i, enemy in ipairs(attack4list) do
 		if enemy:isValid() then
 			enemy_count = enemy_count + 1
 		end
@@ -7773,7 +7762,7 @@ function attack3(delta)
 		avx, avy = vectorFromAngle(random(0,360),asimovDistance)
 		attack3list = spawnEnemies(asimovx+avx,asimovy+avy,1,"Kraylor")
 		attack3spawned = "done"
-		for _, enemy in ipairs(attack3list) do
+		for i, enemy in ipairs(attack3list) do
 			enemy:orderFlyTowards(asimovx, asimovy)
 		end
 		if asimov8thWarning == nil then
@@ -7781,7 +7770,7 @@ function attack3(delta)
 			for pidx=1,8 do
 				p = getPlayerShip(pidx)
 				if p ~= nil and p:isValid() then
-					p:addToShipLog(string.format(_("Asimov-shipLog", "[Asimov] Our sensors show enemies approximately %.2f units away"),asimovDistance/1000),"Magenta")
+					p:addToShipLog(string.format(_("Asimov2-shipLog", "[Asimov] Our sensors show enemies approximately %.2f units away"),asimovDistance/1000),"Magenta")
 				end
 			end
 		end
@@ -7789,7 +7778,7 @@ function attack3(delta)
 			armstrongDistance = random(35000,45000)
 			arx, ary = vectorFromAngle(random(0,360),armstrongDistance)
 			temp3list = spawnEnemies(armstrongx+arx,armstrongy+ary,.667,"Ghosts")
-			for _, enemy in ipairs(temp3list) do
+			for i, enemy in ipairs(temp3list) do
 				enemy:orderFlyTowards(armstrongx,armstrongy)
 				table.insert(attack3list,enemy)
 			end
@@ -7798,7 +7787,7 @@ function attack3(delta)
 				for pidx=1,8 do
 					p = getPlayerShip(pidx)
 					if p ~= nil and p:isValid() then
-						p:addToShipLog(string.format(_("Armstrong-shipLog", "[Armstrong] Our long range sensors show enemies approximately %.2f units away"),armstrongDistance/1000),"Magenta")
+						p:addToShipLog(string.format(_("Armstrong1-shipLog", "[Armstrong] Our long range sensors show enemies approximately %.2f units away"),armstrongDistance/1000),"Magenta")
 					end
 				end
 			end
@@ -7807,7 +7796,7 @@ function attack3(delta)
 			utopiaDistance = random(50000,60000)
 			upx, upy = vectorFromAngle(random(0,360),utopiaDistance)
 			temp4list = spawnEnemies(utopiaPlanitiax+upx,utopiaPlanitiay+upy,.5,"Ktlitans")
-			for _, enemy in ipairs(temp4list) do
+			for i, enemy in ipairs(temp4list) do
 				table.insert(attack3list,enemy)
 			end
 			if utopia8thWarning == nil then
@@ -7815,14 +7804,14 @@ function attack3(delta)
 				for pidx=1,8 do
 					p = getPlayerShip(pidx)
 					if p ~= nil and p:isValid() then
-						p:addToShipLog(string.format(_("UPlanitia-shipLog", "[Utopia Planitia] Our long range sensors show enemies approximately %.2f units away"),utopiaDistance/1000),"Magenta")
+						p:addToShipLog(string.format(_("UPlanitia4-shipLog", "[Utopia Planitia] Our long range sensors show enemies approximately %.2f units away"),utopiaDistance/1000),"Magenta")
 					end
 				end
 			end
 		end
 	end
 	enemy_count = 0
-	for _, enemy in ipairs(attack3list) do
+	for i, enemy in ipairs(attack3list) do
 		if enemy:isValid() then
 			enemy_count = enemy_count + 1
 		end
@@ -7858,8 +7847,8 @@ function inheritanceMessage()
 			for pidx=1,8 do
 				p = getPlayerShip(pidx)
 				if p ~= nil and p:isValid() then
-					p:addToShipLog(string.format(_("Sheila-shipLog", "Sheila Long, A former naval officer recenly perished. Among her personal effects she left a data store for the academy on station Asimov. Her personal effects are located on station %s in sector %s. Please dock and pick up the data store and transport it to station Asimov"),tubeAddStation:getCallSign(),tubeAddStation:getSectorName()),"Magenta")
-					plot8reminder = string.format(_("Sheila-comms", "Get Sheila Long's package from %s in sector %s and take to station Asimov"),tubeAddStation:getCallSign(),tubeAddStation:getSectorName())
+					p:addToShipLog(string.format(_("Sheila1-shipLog", "Sheila Long, A former naval officer recenly perished. Among her personal effects she left a data store for the academy on station Asimov. Her personal effects are located on station %s in sector %s. Please dock and pick up the data store and transport it to station Asimov"),tubeAddStation:getCallSign(),tubeAddStation:getSectorName()),"Magenta")
+					plot8reminder = string.format(_("Sheila1Orders-comms", "Get Sheila Long's package from %s in sector %s and take to station Asimov"),tubeAddStation:getCallSign(),tubeAddStation:getSectorName())
 				end
 			end
 			plot8 = dockWithTubeAddStation
@@ -7875,7 +7864,7 @@ function dockWithTubeAddStation(delta)
 		for pidx=1,8 do
 			p = getPlayerShip(pidx)
 			if p ~= nil and p:isValid() and p:isDocked(tubeAddStation) then
-				p:addToShipLog(_("Sheila-shipLog", "Sheila Long's package for station Asimov is aboard"),"Magenta")
+				p:addToShipLog(_("Sheila2-shipLog", "Sheila Long's package for station Asimov is aboard"),"Magenta")
 				p.sheilaLongPackage = true
 				plot8 = dockWithAsimovForTubeAdd
 				return
@@ -7891,7 +7880,7 @@ function dockWithAsimovForTubeAdd(delta)
 	for pidx=1,8 do
 		p = getPlayerShip(pidx)
 		if p~= nil and p:isValid() and p:isDocked(stationAsimov) then
-			p:addToShipLog(_("Sheila-shipLog", "Sheila Long's package received. The archive curator discovered some research on weapons systems miniaturization in the data store. Utopia Planitia received the information and stated that they believe they can add an extra homing missile weapons tube to any ship in the fleet if the ship will dock with Utopia Planitia"),"Magenta")
+			p:addToShipLog(_("Sheila3-shipLog", "Sheila Long's package received. The archive curator discovered some research on weapons systems miniaturization in the data store. Utopia Planitia received the information and stated that they believe they can add an extra homing missile weapons tube to any ship in the fleet if the ship will dock with Utopia Planitia"),"Magenta")
 			addTubeUpgrade = true
 			plot8 = nil
 			plot8reminder = nil
@@ -7924,19 +7913,19 @@ function flakyTube(delta)
 			flakyTubeVictim:setWeaponTubeCount(newTubes)
 			flakyTubeVictim.flakyTubeCount = flakyTubeVictim.flakyTubeCount + 1
 			failedTubeMessage = "failedTubeMessage"
-			flakyTubeVictim:addCustomMessage("Weapons",failedTubeMessage,_("flakyTube-msgWeapons", "Automated systems removed our new weapons tube due to malfunction. Technicians investigating"))
+			flakyTubeVictim:addCustomMessage("Weapons",failedTubeMessage,_("tube-msgWeapons", "Automated systems removed our new weapons tube due to malfunction. Technicians investigating"))
 			failedTubeMessageTactical = "failedTubeMessageTactical"
-			flakyTubeVictim:addCustomMessage("Tactical",failedTubeMessageTactical,_("flakyTube-msgTactical", "Automated systems removed our new weapons tube due to malfunction. Technicians investigating"))
+			flakyTubeVictim:addCustomMessage("Tactical",failedTubeMessageTactical,_("tube-msgTactical", "Automated systems removed our new weapons tube due to malfunction. Technicians investigating"))
 		else
 			if fixedTubeButton == nil then
 				fixedTubeMessage = "fixedTubeMessage"
-				flakyTubeVictim:addCustomMessage("Weapons",fixedTubeMessage,_("fixedTube-msgWeapons", "Technicians fixed the new tube. Click 'Redeploy' button to enable"))
+				flakyTubeVictim:addCustomMessage("Weapons",fixedTubeMessage,_("tube-msgWeapons", "Technicians fixed the new tube. Click 'Redeploy' button to enable"))
 				fixedTubeMessageTactical = "fixedTubeMessageTactical"
-				flakyTubeVictim:addCustomMessage("Tactical",fixedTubeMessageTactical,_("fixedTube-msgTactical", "Technicians fixed the new tube. Click 'Redeploy' button to enable"))
+				flakyTubeVictim:addCustomMessage("Tactical",fixedTubeMessageTactical,_("tube-msgTactical", "Technicians fixed the new tube. Click 'Redeploy' button to enable"))
 				fixedTubeButton = "fixedTubeButton"
-				flakyTubeVictim:addCustomButton("Weapons",fixedTubeButton,_("fixedTube-buttonWeapons", "Redeploy"),redeployTube)
+				flakyTubeVictim:addCustomButton("Weapons",fixedTubeButton,_("tube-buttonWeapons", "Redeploy"),redeployTube)
 				fixedTubeButtonTactical = "fixedTubeButtonTactical"
-				flakyTubeVictim:addCustomButton("Tactical",fixedTubeButtonTactical,_("fixedTube-buttonTactical", "Redeploy"),redeployTube)
+				flakyTubeVictim:addCustomButton("Tactical",fixedTubeButtonTactical,_("tube-buttonTactical", "Redeploy"),redeployTube)
 			end
 		end
 		flakyTubeTimer = delta + random(150,450)
@@ -7974,7 +7963,7 @@ function duringAmbush(delta)
 	end
 	px, py = closestToAsimov:getPosition()
 	ambushList = spawnEnemies(px-irandom(1000,7000),py-irandom(1000,7000),1.5,"Exuari")
-	for _, enemy in ipairs(ambushList) do
+	for i, enemy in ipairs(ambushList) do
 		enemy:orderAttack(closestToAsimov)
 	end
 	plot7 = afterAmbush
@@ -8013,15 +8002,15 @@ function scannedAnchors(delta)
 		p = getPlayerShip(pidx)
 		if p ~= nil and p:isValid() then
 			if p.artAnchor1 or p.artAnchor2 then
-				p:addToShipLog(_("audioUPlanitiaArtifact-shipLog", "[UTPLNT116](Utopia Planitia) Scanned artifacts show promise for ship systems improvement. Recommend retrieval"),"Yellow")
+				p:addToShipLog(_("UPlanitia5Audio-shipLog", "[UTPLNT116](Utopia Planitia) Scanned artifacts show promise for ship systems improvement. Recommend retrieval"),"Yellow")
 				plotArt = suggestRetrieveAnchors
 				if artSoundButton == nil then
 					artSoundButton = "artSoundButton"
 					artSoundShip = p
-					stationUtopiaPlanitia:sendCommsMessage(artSoundShip,_("audioUPlanitiaArtifact-incCall", "Audio message received, stored for playback: UTPLNT116"))
-					artSoundShip:addCustomButton("Relay",artSoundButton,_("audioUPlanitiaArtifact-buttonRelay", "|> UTPLNT116"),playArtSound)
+					stationUtopiaPlanitia:sendCommsMessage(artSoundShip,_("UPlanitia5Audio-incCall", "Audio message received, stored for playback: UTPLNT116"))
+					artSoundShip:addCustomButton("Relay",artSoundButton,_("UPlanitia5Audio-buttonRelay", "|> UTPLNT116"),playArtSound)
 					artSoundButtonOps = "artSoundButtonOps"
-					artSoundShip:addCustomButton("Operations",artSoundButtonOps,_("audioUPlanitiaArtifact-buttonOperations", "|> UTPLNT116"),playArtSound)
+					artSoundShip:addCustomButton("Operations",artSoundButtonOps,_("UPlanitia5Audio-buttonOperations", "|> UTPLNT116"),playArtSound)
 				end
 			end
 		end
@@ -8045,7 +8034,7 @@ function anchorsAboard(delta)
 			p = getPlayerShip(pidx)
 			if p ~= nil and p:isValid() then
 				if p.artAnchor1 or p.artAnchor2 then
-					p:addToShipLog(_("UPlanitia-shipLog", "[Utopia Planitia] Bring artifacts to Utopia Planitia and we can improve ship maneuverability"),"Magenta")
+					p:addToShipLog(_("UPlanitia6-shipLog", "[Utopia Planitia] Bring artifacts to Utopia Planitia and we can improve ship maneuverability"),"Magenta")
 					plotArt = bringToStation
 				end
 			end
@@ -8070,7 +8059,7 @@ function bringToStation(delta)
 		for pidx=1,8 do
 			p = getPlayerShip(pidx)
 			if p~= nil and p:isValid() then
-				p:addToShipLog(_("UPlanitia-shipLog", "[Utopia Planitia] We received the artifacts. We can improve ship maneuverability next time you dock"),"Magenta")
+				p:addToShipLog(_("UPlanitia7-shipLog", "[Utopia Planitia] We received the artifacts. We can improve ship maneuverability next time you dock"),"Magenta")
 			end
 		end
 		artAnchorUpgrade = true
@@ -8242,7 +8231,7 @@ function spawnEnemies(xOrigin, yOrigin, danger, enemyFaction)
 	if danger == nil then 
 		danger = 1
 	end
-	enemyStrength = math.max(danger * difficulty * playerPower(),5)
+	enemyStrength = math.max(danger * enemy_power * playerPower(),5)
 	enemyPosition = 0
 	sp = irandom(300,500)			--random spacing of spawned group
 	deployConfig = random(1,100)	--randomly choose between squarish formation and hexagonish formation
@@ -8346,11 +8335,11 @@ function healthCheck(delta)
 						p:setRepairCrewCount(1)
 						if p:hasPlayerAtPosition("Engineering") then
 							local repairCrewRecovery = "repairCrewRecovery"
-							p:addCustomMessage("Engineering",repairCrewRecovery,_("medical-msgEngineer", "Medical team has revived one of your repair crew"))
+							p:addCustomMessage("Engineering",repairCrewRecovery,_("repairCrew-msgEngineer", "Medical team has revived one of your repair crew"))
 						end
 						if p:hasPlayerAtPosition("Engineering+") then
 							local repairCrewRecoveryPlus = "repairCrewRecoveryPlus"
-							p:addCustomMessage("Engineering+",repairCrewRecoveryPlus,_("medical-msgEngineer+", "Medical team has revived one of your repair crew"))
+							p:addCustomMessage("Engineering+",repairCrewRecoveryPlus,_("repairCrew-msgEngineer+", "Medical team has revived one of your repair crew"))
 						end
 						resetPreviousSystemHealth(p)
 					end
@@ -8398,7 +8387,7 @@ end
 function relayStatus(delta)
 	local limit_minutes = nil
 	local limit_seconds = nil
-	local limit_status = "Game Timer"
+	local limit_status = _("-tabRelay&Operations", "Game Timer")
 	local leg_average = 0
 	local mission_status = nil
 	for pidx=1,8 do
@@ -8407,11 +8396,11 @@ function relayStatus(delta)
 			if playWithTimeLimit then
 				limit_minutes = math.floor(gameTimeLimit/60)
 				limit_seconds = math.floor(gameTimeLimit%60)
-				limit_status = "Game Timer"
+				limit_status = _("-tabRelay&Operations", "Game Timer")
 				if limit_minutes <= 0 then
-					limit_status = string.format(_("limit Status", "%s %i"),limit_status,limit_seconds)
+					limit_status = string.format(_("-tabRelay&Operations", "%s %i"),limit_status,limit_seconds)
 				else
-					limit_status = string.format(_("limit Status", "%s %i:%.2i"),limit_status,limit_minutes,limit_seconds)
+					limit_status = string.format(_("-tabRelay&Operations", "%s %i:%.2i"),limit_status,limit_minutes,limit_seconds)
 				end
 				if p:hasPlayerAtPosition("Relay") then
 					p.limit_status = "limit_status"
@@ -8433,25 +8422,25 @@ function relayStatus(delta)
 					end
 				else
 					leg_average = (p.patrolLegAsimov + p.patrolLegUtopiaPlanitia + p.patrolLegArmstrong)/3
-					mission_status = string.format(_("%i%% Complete"),math.floor(leg_average/patrolGoal*100))
+					mission_status = string.format(_("-tabRelay&Operations", "%i%% Complete"),math.floor(leg_average/patrolGoal*100))
 					if p.patrolLegArmstrong ~= p.patrolLegAsimov or p.patrolLegUtopiaPlanitia ~= p.patrolLegArmstrong then
 						if p.patrolLegArmstrong == p.patrolLegAsimov then
 							if p.patrolLegArmstrong > p.patrolLegUtopiaPlanitia then
-								mission_status = string.format(_("%s -Utopia Planitia"),mission_status)
+								mission_status = string.format(_("-tabRelay&Operations", "%s -Utopia Planitia"),mission_status)
 							else
-								mission_status = string.format(_("%s +Utopia Planitia"),mission_status)
+								mission_status = string.format(_("-tabRelay&Operations", "%s +Utopia Planitia"),mission_status)
 							end
 						elseif p.patrolLegArmstrong == p.patrolLegUtopiaPlanitia then
 							if p.patrolLegArmstrong > p.patrolLegAsimov then
-								mission_status = string.format(_("%s -Asimov"),mission_status)
+								mission_status = string.format(_("-tabRelay&Operations", "%s -Asimov"),mission_status)
 							else
-								mission_status = string.format(_("%s +Asimov"),mission_status)
+								mission_status = string.format(_("-tabRelay&Operations", "%s +Asimov"),mission_status)
 							end
 						else
 							if p.patrolLegAsimov > p.patrolLegArmstrong then
-								mission_status = string.format(_("%s -Armstrong"),mission_status)
+								mission_status = string.format(_("-tabRelay&Operations", "%s -Armstrong"),mission_status)
 							else
-								mission_status = string.format("%s +Armstrong",mission_status)
+								mission_status = string.format(_("-tabRelay&Operations", "%s +Armstrong"),mission_status)
 							end
 						end
 					end
@@ -8468,7 +8457,7 @@ function relayStatus(delta)
 						if stationAsimov.telemetry then
 							shield_percentage =  stationAsimov:getShieldLevel(0) / stationAsimov:getShieldMax(0)
 							if shield_percentage < 1 then
-								local asimov_health = string.format(_("Asimov S:%i%% H:%i%%"),math.floor(shield_percentage*100),math.floor(stationAsimov:getHull()/stationAsimov:getHullMax()*100))
+								local asimov_health = string.format(_("-tabRelay&Operations", "Asimov S:%i%% H:%i%%"),math.floor(shield_percentage*100),math.floor(stationAsimov:getHull()/stationAsimov:getHullMax()*100))
 								if p:hasPlayerAtPosition("Relay") then
 									p.asimov_status = "asimov_status"
 									p:addCustomInfo("Relay",p.asimov_status,asimov_health)
@@ -8506,7 +8495,7 @@ function relayStatus(delta)
 								shield_index = shield_index + 1
 							until shield_index >= 3
 							if weakened_shield then
-								local up_health = string.format(_("U.P. WS:%i%% H:%i%%"),math.floor(weakest_shield/1000*100),math.floor(stationUtopiaPlanitia:getHull()/stationUtopiaPlanitia:getHullMax()*100))
+								local up_health = string.format(_("-tabRelay&Operations", "U.P. WS:%i%% H:%i%%"),math.floor(weakest_shield/1000*100),math.floor(stationUtopiaPlanitia:getHull()/stationUtopiaPlanitia:getHullMax()*100))
 								if p:hasPlayerAtPosition("Relay") then
 									p.up_status = "up_status"
 									p:addCustomInfo("Relay",p.up_status,up_health)
@@ -8544,7 +8533,7 @@ function relayStatus(delta)
 								shield_index = shield_index + 1
 							until shield_index >= 4
 							if weakened_shield then
-								local armstrong_health = string.format(_("U.P. WS:%i%% H:%i%%"),math.floor(weakest_shield/1000*100),math.floor(stationArmstrong:getHull()/stationArmstrong:getHullMax()*100))
+								local armstrong_health = string.format(_("-tabRelay&Operations", "U.P. WS:%i%% H:%i%%"),math.floor(weakest_shield/1000*100),math.floor(stationArmstrong:getHull()/stationArmstrong:getHullMax()*100))
 								if p:hasPlayerAtPosition("Relay") then
 									p.armstrong_status = "armstrong_status"
 									p:addCustomInfo("Relay",p.armstrong_status,armstrong_health)

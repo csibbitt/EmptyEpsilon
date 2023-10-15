@@ -9,8 +9,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 2.4.3\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Poedit 3.2.2\n"
 "X-Poedit-Basepath: .\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
@@ -31,17 +31,17 @@ msgstr ""
 "- Difficulté : Difficile (variable)\n"
 "- Vaisseaux joueurs : 1 à plusieurs\n"
 "\n"
-"À l'aide du Nautilus de classe \"Poseur de mines\", déployez des mines sur "
-"les voies spatiales qui pourraient être utilisées par les ennemis "
-"envahisseurs pour attaquer votre station.\n"
+"Mission : À bord de votre \"Poseur de mines\", protégez les voies spatiales "
+"qui mènent à votre station des ennemis envahisseurs.\n"
 "\n"
-"Version 1 - nov 2021\n"
+"Version 1 - Nov. 2021\n"
 "\n"
 "- Titre original : Close the Gaps\n"
-"- Auteur : Xansta\n"
-"https://discord.gg/GjqM9Y9yBe\n"
+"- Auteur : Xansta (2018)\n"
 "- Traduction FR : Muerte\n"
-"https://discord.gg/2NPKyMnGwp"
+"\n"
+"Communauté française et anglophone sur le Discord USN https://discord.gg/"
+"TVxuxn7ZYW : feedback sur les scénarios, aide, sessions de jeu tous les we."
 
 # Scenario setting
 msgctxt "setting"
@@ -1803,7 +1803,7 @@ msgstr "Réparateur embauché"
 #: scripts/scenario_50_gaps.lua:2498
 msgctxt "station-comms"
 msgid "Tell me more about your station"
-msgstr "Dites m'en plus à propos de votre station."
+msgstr "Dites m'en plus à propos de votre station"
 
 #: scripts/scenario_50_gaps.lua:2499
 msgctxt "station-comms"
@@ -2167,7 +2167,7 @@ msgstr ""
 "     %s en %s pourrait avoir %s."
 
 #: scripts/scenario_50_gaps.lua:2793
-msgctxt "ammo-comms"
+msgctxt "station-comms"
 msgid "You need to stay docked for that action."
 msgstr "Vous devez rester amarré à la station pour cette action."
 
@@ -2516,7 +2516,7 @@ msgctxt "trade-comms"
 msgid " and will trade it for luxury"
 msgstr " et va l'échanger contre des Produits de luxe (luxury)"
 
-#: scripts/scenario_50_gaps.lua:3267
+#: scripts/scenario_50_gaps.lua:3267 scripts/scenario_50_gaps.lua:3440
 msgctxt "shipAssist-comms"
 msgid "What do you want?"
 msgstr "Que voulez-vous ?"
@@ -2553,7 +2553,7 @@ msgstr "Défendez le marqueur %d"
 #, lua-format
 msgctxt "shipAssist-comms"
 msgid "We are heading to assist at WP %d."
-msgstr "Nous partons pour défendre le marqueur %d."
+msgstr "Nous partons immédiatement défendre le marqueur %d."
 
 #: scripts/scenario_50_gaps.lua:3287
 msgctxt "shipAssist-comms"
@@ -2780,11 +2780,6 @@ msgctxt "trade-comms"
 msgid "Purchased"
 msgstr "Acheté"
 
-#: scripts/scenario_50_gaps.lua:3440
-msgctxt "trade-comms"
-msgid "What do you want?"
-msgstr "Que voulez-vous ?"
-
 #: scripts/scenario_50_gaps.lua:3443
 #, lua-format
 msgctxt "trade-comms"
@@ -2817,12 +2812,12 @@ msgstr ""
 "Bonne journée."
 
 #: scripts/scenario_50_gaps.lua:3862
-msgctxt "msgEngineer"
+msgctxt "repairCrew-msgEngineer"
 msgid "One of your repair crew has perished"
 msgstr "Un de vos réparateurs a péri."
 
 #: scripts/scenario_50_gaps.lua:3866
-msgctxt "msgEngineer+"
+msgctxt "repairCrew-msgEngineer+"
 msgid "One of your repair crew has perished"
 msgstr "Un de vos réparateurs a péri."
 
@@ -2839,7 +2834,7 @@ msgstr ""
 "station."
 
 #: scripts/scenario_50_gaps.lua:3876
-msgctxt "orders-comms"
+msgctxt "goal-comms"
 msgid "Lay minefield across each gap in surrounding asteroids."
 msgstr ""
 "Poser un champ de mines au travers de chaque brèche dans les astéroïdes "
@@ -2847,47 +2842,51 @@ msgstr ""
 
 #: scripts/scenario_50_gaps.lua:3894
 #, lua-format
-msgctxt "minefield-shiplog"
+msgctxt "minefieldOrder-shiplog"
 msgid "Congratulations, You've closed the gap at heading 180 from %s"
 msgstr "Félicitations, vous avez sécurisé la brèche au cap 180 de %s."
 
 #: scripts/scenario_50_gaps.lua:3895
+msgctxt "minefieldOrders-comms"
 msgid " South gap closed."
 msgstr "Brèche sud sécurisée."
 
 #: scripts/scenario_50_gaps.lua:3905
 #, lua-format
-msgctxt "minefield-shiplog"
+msgctxt "minefieldOrders-shiplog"
 msgid "Congratulations, You've closed the gap at heading 0 from %s"
 msgstr "Félicitations, vous avez sécurisé la brèche au cap 0 de %s."
 
 #: scripts/scenario_50_gaps.lua:3906
+msgctxt "minefieldOrders-comms"
 msgid " North gap closed."
 msgstr "Brèche nord sécurisée."
 
 #: scripts/scenario_50_gaps.lua:3916
 #, lua-format
-msgctxt "minefield-shiplog"
+msgctxt "minefieldOrders-shiplog"
 msgid "Congratulations, You've closed the gap at heading 270 from %s"
 msgstr "Félicitations, vous avez sécurisé la brèche au cap 270 de %s."
 
 #: scripts/scenario_50_gaps.lua:3917
+msgctxt "minefieldOrders-comms"
 msgid " West gap closed."
 msgstr "Brèche ouest sécurisée."
 
 #: scripts/scenario_50_gaps.lua:3927
 #, lua-format
-msgctxt "minefield-shiplog"
+msgctxt "minefieldOrders-shiplog"
 msgid "Congratulations, You've closed the gap at heading 90 from %s"
 msgstr "Félicitations, vous avez sécurisé la brèche au cap 90 de %s."
 
 #: scripts/scenario_50_gaps.lua:3928
+msgctxt "minefieldOrders-comms"
 msgid " East gap closed."
 msgstr "Brèche est sécurisée."
 
 #: scripts/scenario_50_gaps.lua:3938
 #, lua-format
-msgctxt "minefield-shiplog"
+msgctxt "minefieldOrders-shiplog"
 msgid ""
 "You've closed the gaps. Now for the Quixotic part: go destroy the enemy "
 "bases surrounding us while keeping %s alive. You'll find them straight out "
@@ -2899,6 +2898,14 @@ msgstr ""
 
 #: scripts/scenario_50_gaps.lua:3939
 #, lua-format
-msgctxt "orders-comms"
+msgctxt "minefieldOrders-comms"
 msgid "Protect %s. Destroy enemy bases straight out from gaps"
 msgstr "Protéger %s. Détruire les bases ennemies en sortant par les brèches."
+
+#~ msgctxt "trade-comms"
+#~ msgid "What do you want?"
+#~ msgstr "Que voulez-vous ?"
+
+#~ msgctxt "msgEngineer+"
+#~ msgid "One of your repair crew has perished"
+#~ msgstr "Un de vos réparateurs a péri."

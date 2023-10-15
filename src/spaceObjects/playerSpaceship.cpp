@@ -520,8 +520,8 @@ string alertLevelToLocaleString(EAlertLevel level)
 }
 
 // Configure ship's log packets.
-static inline sp::io::DataBuffer& operator << (sp::io::DataBuffer& packet, const PlayerSpaceship::ShipLogEntry& e) { return packet << e.prefix << e.text << e.color.r << e.color.g << e.color.b << e.color.a; }
-static inline sp::io::DataBuffer& operator >> (sp::io::DataBuffer& packet, PlayerSpaceship::ShipLogEntry& e) { packet >> e.prefix >> e.text >> e.color.r >> e.color.g >> e.color.b >> e.color.a; return packet; }
+static inline sp::io::DataBuffer& operator << (sp::io::DataBuffer& packet, const PlayerSpaceship::ShipLogEntry& e) { return packet << e.prefix << e.text << e.color.r << e.color.g << e.color.b << e.color.a << e.seq; }
+static inline sp::io::DataBuffer& operator >> (sp::io::DataBuffer& packet, PlayerSpaceship::ShipLogEntry& e) { packet >> e.prefix >> e.text >> e.color.r >> e.color.g >> e.color.b >> e.color.a >> e.seq; return packet; }
 
 REGISTER_MULTIPLAYER_CLASS(PlayerSpaceship, "PlayerSpaceship");
 PlayerSpaceship::PlayerSpaceship()
@@ -1123,7 +1123,7 @@ void PlayerSpaceship::addToShipLog(string message, glm::u8vec4 color)
         ships_log.erase(ships_log.begin());
 
     // Timestamp a log entry, color it, and add it to the end of the log.
-    ships_log.emplace_back(gameGlobalInfo->getMissionTime() + string(": "), message, color);
+    ships_log.emplace_back(gameGlobalInfo->getMissionTime() + string(": "), message, color, last_log_seq++);
 }
 
 void PlayerSpaceship::addToShipLogBy(string message, P<SpaceObject> target)
@@ -2281,22 +2281,22 @@ string PlayerSpaceship::getExportLine()
             auto difference = std::fabs(current_factor - default_factor) > std::numeric_limits<float>::epsilon();
             if (difference)
             {
-                result += ":setSystemPowerFactor(" + string(system) + ", " + string(current_factor, 1) + ")";
+                result += ":setSystemPowerFactor(\"" + getSystemName(system) + "\", " + string(current_factor, 1) + ")";
             }
 
             if (std::fabs(getSystemCoolantRate(system) - ShipSystem::default_coolant_rate_per_second) > std::numeric_limits<float>::epsilon())
             {
-                result += ":setSystemCoolantRate(" + string(system) + ", " + string(getSystemCoolantRate(system), 2) + ")";
+                result += ":setSystemCoolantRate(\"" + getSystemName(system) + "\", " + string(getSystemCoolantRate(system), 2) + ")";
             }
 
             if (std::fabs(getSystemHeatRate(system) - ShipSystem::default_heat_rate_per_second) > std::numeric_limits<float>::epsilon())
             {
-                result += ":setSystemHeatRate(" + string(system) + ", " + string(getSystemHeatRate(system), 2) + ")";
+                result += ":setSystemHeatRate(\"" + getSystemName(system) + "\", " + string(getSystemHeatRate(system), 2) + ")";
             }
 
             if (std::fabs(getSystemPowerRate(system) - ShipSystem::default_power_rate_per_second) > std::numeric_limits<float>::epsilon())
             {
-                result += ":setSystemPowerRate(" + string(system) + ", " + string(getSystemPowerRate(system), 2) + ")";
+                result += ":setSystemPowerRate(\"" + getSystemName(system) + "\", " + string(getSystemPowerRate(system), 2) + ")";
             }
         }
     }

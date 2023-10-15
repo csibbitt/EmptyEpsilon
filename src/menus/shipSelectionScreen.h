@@ -5,6 +5,7 @@
 #include "gui/gui2_canvas.h"
 #include "gui/gui2_panel.h"
 
+class GuiScrollText;
 class GuiLabel;
 class GuiListbox;
 class GuiOverlay;
@@ -20,6 +21,7 @@ class PasswordDialog;
 class ShipSelectionScreen : public GuiCanvas, public Updatable
 {
 private:
+    GuiScrollText* playership_info;
     GuiElement* container;
     GuiElement* left_container;
     GuiElement* right_container;
@@ -54,7 +56,7 @@ private:
     GuiToggleButton* crew_position_button[max_crew_positions];
     GuiToggleButton* main_screen_controls_button;
     GuiToggleButton* window_button;
-    GuiSlider* window_angle;
+    GuiTextEntry* window_angle;
     GuiLabel* window_angle_label;
     GuiToggleButton* topdown_button;
 };
