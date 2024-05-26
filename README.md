@@ -1,3 +1,12 @@
+# Forked build
+
+This is a forked build of EE with the following patches which are not part of the official build:
+
+* Improved ship log
+  * https://github.com/daid/SeriousProton/pull/239
+  * https://github.com/daid/EmptyEpsilon/pull/1938
+
+# Original README
 ![EmptyEpsilon logo](https://raw.githubusercontent.com/daid/EmptyEpsilon/master/resources/logo_full.png)
 
 Started as a cross-platform, open-source "clone" of [Artemis Spaceship Bridge Simulator](https://www.artemisspaceshipbridge.com/), **EmptyEpsilon** has already deviated from Artemis with new features and gameplay, including a Game Master mode and multiple AI factions. We strive to get EmptyEpsilon working on several platforms, and Windows, Linux, and Android are fully supported.
