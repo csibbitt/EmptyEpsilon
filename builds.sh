@@ -17,7 +17,9 @@ ninja
 ninja package
 
 cd ..
+
 rm -Rf _build_android
+mkdir _build_android
 cd _build_android
 cmake .. -G Ninja -DSERIOUS_PROTON_DIR=../../SeriousProton -DCMAKE_TOOLCHAIN_FILE=../cmake/android.toolchain -DCMAKE_PROJECT_EmptyEpsilon_INCLUDE=./version.cmake
 ninja
