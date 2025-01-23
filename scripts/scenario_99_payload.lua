@@ -1,14 +1,15 @@
 -- Name: PushPayload
 -- Description: Keep pushing the cart!
 ---
+---Player ships: 1
+---
+---Author: Chris Sibbitt Input From:
+---Created: Jan2025
+---Feedback: USN Discord: https://discord.gg/7Kr32ezJFF
 -- Type: Development
-
---- Scenario
--- @script scenario_99_payload
--- Setting[Difficulty]: Configures the difficulty in the scenario. Default is Easy
--- Difficulty[Easy|Default]: Minor enemy resistance and easier missions.
--- Difficulty[Medium]: More robust resistance with more risk (takes longer).
--- Difficulty[Hard]: Significant enemy resistance.
+-- ZSetting[WaveTimer]: Display a wave timer in the Science/Ops console. Default is Disabled
+-- WaveTimer[Disabled|Default]: No visible wave timer
+-- WaveTimer[Enabled]: Show a wave timer in the Science/Ops console
 
 require("utils.lua")
 
@@ -17,13 +18,16 @@ Debug = false
 ---@diagnostic disable-next-line: lowercase-global
 function init()
 
+  SetSettings()
+
   if Debug then
     FieldSize = 20000
   else
     FieldSize = 120000
   end
   -- Create the faction stations
-  FactionStation = SpaceStation():setTemplate("Small Station"):setFaction("Human Navy"):setPosition(0, 0)
+  FactionStation = SpaceStation():setTemplate("Large Station"):setFaction("Human Navy"):setPosition(0, 0)
+  FactionStation.x, FactionStation.y = FactionStation:getPosition()
   local kx, ky
   if Debug then
     kx = FieldSize
@@ -31,25 +35,63 @@ function init()
   else
     kx, ky = RandPositionInRadius(0, 0, FieldSize, FieldSize, 0, 360)
   end
-  KraylorStation = SpaceStation():setTemplate("Small Station"):setFaction("Kraylor"):setPosition(kx, ky)
+  KraylorStation = SpaceStation():setTemplate("Large Station"):setFaction("Kraylor"):setPosition(kx, ky)
+  KraylorStation.x, KraylorStation.y = KraylorStation:getPosition()
 
   -- Calculate midpoint between stations
   local fsX, fsY = FactionStation:getPosition()
   local esX, esY = KraylorStation:getPosition()
-  local midX = math.floor((fsX + esX) / 2)
-  local midY = math.floor((fsY + esY) / 2)
+  MidX = math.floor((fsX + esX) / 2)
+  MidY = math.floor((fsY + esY) / 2)
 
   -- Create the Payload ship
   PayloadDistanceThreshold = 2000
-  PayloadShip = CpuShip():setTemplate("Adv. Gunship"):setFaction("Independent"):setPosition(midX, midY):setCallSign("Payload"):setImpulseMaxSpeed(625) -- :setImpulseMaxSpeed(1000):setRotationMaxSpeed(20):setAcceleration(40)
+  PayloadShip = CpuShip():setTemplate("Adv. Gunship"):setFaction("Independent"):setPosition(MidX, MidY):setCallSign("Payload"):setImpulseMaxSpeed(95) -- :setImpulseMaxSpeed(1000):setRotationMaxSpeed(20):setAcceleration(40)
+  PayloadShip.x, PayloadShip.y = PayloadShip:getPosition()
   PayloadShip.target = nil
   PayloadShip.scanACKd = false
   PayloadShip.Waypoints = {}
   PayloadShip.controlledBy = nil  -- Initialize controlledBy property
 
+  -- Spawn some asteroids
+  local asteroidNum = 200 --200
+  if Debug then
+    asteroidNum = 0
+  end
+  placeRandomObjects(Asteroid, asteroidNum, 0.3, MidX, MidY, 11, 11)
+
+  -- Unspawn some asteroids
+  local clearRadius = 5000
+  ClearHazardsNear(FactionStation.x, FactionStation.y, clearRadius)
+  ClearHazardsNear(KraylorStation.x, KraylorStation.y, clearRadius)
+  ClearHazardsNear(PayloadShip.x, PayloadShip.y, clearRadius)
+  ThinPath(FactionStation, KraylorStation)
+
+  -- Spawn Nebulas
+  local nebulaNum = 15 --15
+  if Debug then
+    nebulaNum = 0
+  end
+  placeRandomObjects(Nebula, nebulaNum, 0.3, MidX, MidY, 11, 11)
+
+  -- Spawn mines
+  for __ = 1, 25 do
+    local x, y = RandPositionInRadius(MidX, MidY, FieldSize / 2 - 5000, FieldSize / 2 - 40000, 0, 360)
+    Mine():setPosition(x, y)
+  end
+
+  -- Spawn weapon pickup artifacts
+  PowerupArtifacts = {}
+  PowerupHintIndex = 1
+  SpawnWeaponPickups()
+
   -- Initialize wave variables
+  if Debug then
+    WaveInterval = 30
+  else
+    WaveInterval = 120
+  end
   WaveSize = 0
-  WaveInterval = 300 --**seconds (usually 120)
   WaveTimer = WaveInterval
   WavePayloadLastControlledBy = nil
   KraylorShips = {}
@@ -63,37 +105,15 @@ function init()
   ClosestEnemyInterval = 5 -- seconds
   ClosestEnemyTimer = ClosestEnemyInterval
 
-
   -- Spawn the first wave immediately
   SpawnWave()
 
   -- Spawn Stations
-  SpawnObjects(StationFactory("HVLI", 8), 1,    midX, midY, FieldSize / 2, 15000)
-  SpawnObjects(StationFactory("Homing", 16), 1, midX, midY, FieldSize / 2, 15000)
-  SpawnObjects(StationFactory("EMP", 24), 1,    midX, midY, FieldSize / 2, 15000)
-  SpawnObjects(StationFactory("Mine", 32), 1,   midX, midY, FieldSize / 2, 15000)
-  SpawnObjects(StationFactory("Nuke", 40), 1,   midX, midY, FieldSize / 2, 15000)
-
-  -- irandom(midX - FieldSize / 2, midX + FieldSize / 2)
-  -- irandom(midY - FieldSize / 2, midY + FieldSize / 2)
-
-  -- Spawn Nebulas
-  local nebulaNum = 10
-  if Debug then
-    nebulaNum = 0
-  end
-  for i = 1, nebulaNum do
-    SpawnObjects(Nebula, 10, irandom(midX - FieldSize / 2, midX + FieldSize / 2), irandom(midY - FieldSize / 2, midY + FieldSize/ 2), 20000, 0)
-  end
-
-  -- Spawn Asteroids
-  local asteroidNum = 20
-  if Debug then
-    asteroidNum = 0
-  end
-  for i = 1, asteroidNum do
-    SpawnObjects(Asteroid, 150, irandom(midX - FieldSize / 2, midX + FieldSize / 2), irandom(midY - FieldSize / 2, midY + FieldSize / 2), 15000, 0)
-  end
+  SpawnObjects(StationFactory("HVLI", 8), 1,    MidX, MidY, FieldSize / 2, 15000)
+  SpawnObjects(StationFactory("Homing", 16), 1, MidX, MidY, FieldSize / 2, 15000)
+  SpawnObjects(StationFactory("EMP", 24), 1,    MidX, MidY, FieldSize / 2, 15000)
+  SpawnObjects(StationFactory("Mine", 32), 1,   MidX, MidY, FieldSize / 2, 15000)
+  SpawnObjects(StationFactory("Nuke", 40), 1,   MidX, MidY, FieldSize / 2, 15000)
 
   -- Create the player ship
   allowNewPlayerShips(false)
@@ -112,6 +132,55 @@ function init()
   Player:setWeaponStorage("EMP", 0)
   Player:setWeaponStorage("HVLI", 4)
   Player:setLongRangeRadarRange(20000)
+
+  -- Set comms function for the payload ship
+  PayloadShip:setCommsFunction(PayloadCommsHandler)
+end
+
+-- Clear asteroids within radius
+function ClearHazardsNear(centerX, centerY, radius, maxRoids, maxMines)
+  local maxRoids = maxRoids or 0
+  local maxMines = maxMines or 0
+  local objects = getObjectsInRadius(centerX, centerY, radius)
+  local roidCount = 0
+  local mineCount = 0
+
+  -- Shuffle the objects
+  if maxRoids > 0 or maxMines > 0 then
+    for i = #objects, 2, -1 do
+      local j = math.random(i)
+      objects[i], objects[j] = objects[j], objects[i]
+    end
+  end
+
+  -- Destroy any hazards beyond the limits
+  for _, potentialHazard in ipairs(objects) do
+    if potentialHazard.typeName == "Asteroid" then
+      roidCount = roidCount + 1
+      if roidCount > maxRoids then
+        potentialHazard:destroy()
+      end
+    end
+    if potentialHazard.typeName == "Mine" then
+      mineCount = mineCount + 1
+      if mineCount > maxMines then
+        potentialHazard:destroy()
+      end
+    end
+  end
+end
+
+--translate variations into a numeric Difficulty value
+function SetSettings()
+  if string.find(getScenarioSetting("Difficulty"),"Easy") then
+    Difficulty = 1
+  elseif string.find(getScenarioSetting("Difficulty"),"Medium") then
+    Difficulty = 3
+  elseif string.find(getScenarioSetting("Difficulty"),"Hard") then
+    Difficulty = 5
+  else
+    Difficulty = 1    --default (Easy)
+  end
 end
 
 function CheckWinCondition()
@@ -228,10 +297,35 @@ function CommsFactory(target, weaponType, price)
         setCommsMessage("You do not have enough reputation points.")
       end
     end)
+
+    addCommsReply(_("Gossip with the locals about salvage"), function()
+      if #PowerupArtifacts > 0 then
+        local artifact = PowerupArtifacts[PowerupHintIndex]
+        local x, y = artifact:getPosition()
+        local sector = getSectorName(x, y)
+        setCommsMessage(string.format(_("We've heard about some shiny things in sector %s."), sector))
+      else
+        setCommsMessage(_("No salvage opportunities detected at the moment."))
+      end
+    end)
   end
 
   target:setCommsFunction(StationCommsHandler)
   return target
+end
+
+-- Function to handle Payload ship comms
+function PayloadCommsHandler(comms_source, comms_target)
+  setCommsMessage(_("Payload ship here. What do you need?"))
+
+  addCommsReply(_("Recalculate route"), function()
+    if PayloadShip.target ~= nil then
+      PayloadShip.Waypoints = GenerateWaypoints(PayloadShip.target)
+      setCommsMessage(_("Route recalculated."))
+    else
+      setCommsMessage(_("No target set for the payload ship."))
+    end
+  end)
 end
 
 function RandPositionInRadius(x, y, maxdist, mindist, anglemin, anglemax)
@@ -263,15 +357,15 @@ function SpawnWave()
   local humanCount = #HumanShips
 
   WaveSize = math.min(WaveSize + 1, maxWaveSize)
-  local queenNumber = irandom(1, WaveSize)
+  local queenNumber = irandom(1, WaveSize) -- Queen may not spawn in an attenuated wave
 
   local spawnKraylorCount = WaveSize
   local spawnHumanCount = WaveSize
 
+  -- Attenuate spawn count to equalize the post-spawn size of each faction
   if #KraylorShips > #HumanShips then
     spawnKraylorCount = WaveSize - (kraylorCount - humanCount)
   end
-
   if #HumanShips > #KraylorShips then
     spawnHumanCount = WaveSize - (humanCount - kraylorCount)
   end
@@ -280,7 +374,7 @@ function SpawnWave()
     local angle = math.rad(PayloadShip:getRotation() + 90)
     local fsX, fsY = FactionStation:getPosition()
     local esX, esY = KraylorStation:getPosition()
-  
+
     local enemyX = esX + math.cos(angle) * perpendicularOffset * i
     local enemyY = esY + math.sin(angle) * perpendicularOffset * i
     local humanX = fsX - math.cos(angle) * perpendicularOffset * i
@@ -320,12 +414,17 @@ function SpawnWave()
       table.insert(HumanShips, human)
     end
   end
+
+  -- Rotate powerup hint index
+  if #PowerupArtifacts > 0 then
+    PowerupHintIndex = (PowerupHintIndex % #PowerupArtifacts) + 1
+  end
 end
 
 -- Function to handle aggro
 function OnDamaged(self, instigator)
   -- "Note that the callback function must reference something global, otherwise you get an error like "??[convert<ScriptSimpleCallback>::param] Upvalue 1 of function is not a table..."
-  local _ = math.abs(0)
+  local __ = math.abs(0)
   if instigator and instigator:getFaction() ~= self:getFaction() then
     if not self.lastAggroSwitch or getScenarioTime() - self.lastAggroSwitch > 20 then
       self.aggroTarget = instigator
@@ -345,9 +444,29 @@ function CalculateAngle(x1, y1, x2, y2)
 end
 
 -- Function to generate waypoints
+function ThinPath(start, finish, stepSize, maxAsteroids, maxMines)
+  local startX, startY = start:getPosition()
+  local finishX, finishY = finish:getPosition()
+  local stepSize = stepSize or 10000
+  local maxAsteroids = maxAsteroids or 6
+  local maxMines = maxMines or 1
+  local angleBetween = math.floor(CalculateAngle(startX, startY, finishX, finishY))
+
+  while distance(startX, startY, finishX, finishY) > stepSize do
+    local waypointX = startX + stepSize * math.cos(math.rad(angleBetween))
+    local waypointY = startY + stepSize * math.sin(math.rad(angleBetween))
+    waypointX = waypointX + irandom(math.floor(-stepSize / 4), math.floor(stepSize / 4))
+    waypointY = waypointY + irandom(math.floor(-stepSize / 4), math.floor(stepSize / 4))
+    ClearHazardsNear(waypointX, waypointY, stepSize/1.5, maxAsteroids, maxMines)
+    startX = waypointX
+    startY = waypointY
+  end
+end
+
+-- Function to generate waypoints
 function GenerateWaypoints(target)
   local waypoints = {}
-  local wayPointDistance = FieldSize / 16
+  local wayPointDistance = FieldSize / 8
   local payloadX, payloadY = PayloadShip:getPosition()
   local targetX, targetY = target:getPosition()
   local distanceBetween = distance(target, PayloadShip)
@@ -397,7 +516,7 @@ function HandlePayloadMovement()
   else
     if #PayloadShip.Waypoints > 0 then
       local waypoint = PayloadShip.Waypoints[1]
-      if distance(PayloadShip, waypoint.x, waypoint.y) < 200 then
+      if distance(PayloadShip, waypoint.x, waypoint.y) < 500 then
         table.remove(PayloadShip.Waypoints, 1)
       else
         local targetX, targetY = PayloadShip:getOrderTargetLocation()
@@ -406,7 +525,12 @@ function HandlePayloadMovement()
         end
       end
     else
-      PayloadShip:orderDock(PayloadShip.target)
+      if distance(PayloadShip, PayloadShip.target) < 2000 then
+        PayloadShip:orderDock(PayloadShip.target)
+      else
+        local x, y = PayloadShip.target:getPosition()
+        PayloadShip:orderFlyTowards(x,y)
+      end
     end
   end
 end
@@ -426,17 +550,25 @@ function HandleNPCWaves(delta)
     WaveTimer = math.min(WaveTimer, 60) -- add randomness
   end
 
-  if (PayloadShip.controlledBy ~= nil or #KraylorShips == 0) then
-    Player:addCustomInfo("science","wavetimer","Next wave: " .. WaveTimer .. "s")
-    Player:addCustomInfo("operations","wavetimer","Next wave: " .. WaveTimer .. "s")
-  else
-    Player:addCustomInfo("science","wavetimer","")
-    Player:addCustomInfo("operations","wavetimer","")
+  -- Are conditions right to spawn a wave?
+  local willSpawnIfTime = (PayloadShip.controlledBy ~= nil or #KraylorShips == 0)
+
+  -- Display wave timer
+  if string.find(getScenarioSetting("WaveTimer"),"Enabled") then
+    local waveTimerMsg = _("Next wave: " .. math.floor(WaveTimer) .. "s")
+    if willSpawnIfTime then
+      Player:addCustomInfo("Science","wavetimer_sci", waveTimerMsg)
+      Player:addCustomInfo("Operations","wavetimer_ops", waveTimerMsg)
+    else
+      Player:addCustomInfo("Science","wavetimer_sci", "Next wave: --")
+      Player:addCustomInfo("Operations","wavetimer_ops", "Next wave: --")
+    end
   end
 
   -- Spawn wave if timer is up and pushing payload or no enemies
   if WaveTimer <= 0 then
-    if (PayloadShip.controlledBy ~= nil or #KraylorShips == 0) then
+    WaveTimer = 0
+    if willSpawnIfTime then
       SpawnWave()
     end
     WaveTimer = WaveInterval
@@ -518,61 +650,80 @@ function CleanShipLists()
   end
 end
 
-function IssueOneOrder(ship, ClosestEnemy, oppShipList)
-  -- Do nothing if we have captain's orders
-  local currentOrder = ship:getOrder()
-  if ship:getOrder() ~= "Attack" and ship:getOrder() ~= "Fly in formation" and ship:getOrder() ~= "Idle" then
-    return
-  end
-
-  -- Clean out stale attack orders
-  if ship:getOrder() == "Attack" and (ship:getOrderTarget() == nil or not ship:getOrderTarget():isValid()) then
-    ship:orderIdle() --Temporary until overriden below
-  end
-
-  -- Have been aggro'd
-  if ship.aggroTarget then
-    if not SafeOrder(ship, ship.aggroTarget, "Attack") then
-      ship.aggroTarget = nil
-      if not SafeAttackRandom(ship, oppShipList) then
-        SafeOrder(ship, PayloadShip, "Fly in formation")
-      end
-    end
-  -- Close to payload with an enemy close to payload
-  elseif distance(ship, PayloadShip) < PayloadDistanceThreshold and distance(ClosestEnemy, PayloadShip) < PayloadDistanceThreshold then
-      if not SafeOrder(ship, ClosestEnemy, "Attack") then
-        if not SafeAttackRandom(ship, oppShipList) then
-          SafeOrder(ship, PayloadShip, "Fly in formation")
-        end
-      end
-  -- Contested payload
-  elseif PayloadShip.controlledBy == nil then
+function OrdersAggro(ship, closestEnemy, oppShipList)
+  if not SafeOrder(ship, ship.aggroTarget, "Attack") then
+    ship.aggroTarget = nil
     if not SafeAttackRandom(ship, oppShipList) then
-      if ship:getFaction() ~= Player:getFaction() and distance(PayloadShip, Player) < 2.5 * PayloadDistanceThreshold then
-        SafeOrder(ship, Player, "Attack")
-      else
-        SafeOrder(ship, PayloadShip, "Fly in formation")
-      end
+      SafeOrder(ship, PayloadShip, "Fly in formation")
     end
-  -- In control of payload
-  elseif PayloadShip.controlledBy == ship:getFaction() then
-    SafeOrder(ship, PayloadShip, "Fly in formation")
-  -- Not in control of payload
-  elseif PayloadShip.controlledBy ~= ship:getFaction() then
-    if not SafeOrder(ship, ClosestEnemy, "Attack") then
-      if not SafeAttackRandom(ship, oppShipList) then
-        SafeOrder(ship, PayloadShip, "Fly in formation")
-      end
-    end
-  -- Debug catch-all
-  else
-    print('Unknown state in IssueOneOrder()')
   end
 end
 
-function IssueOrders(shipList, oppShipList, ClosestEnemy)
+function OrdersCloseToPayload(ship, closestEnemy, oppShipList)
+  -- if enemy player is close to payload, attack player
+  if ship:getFaction() ~= Player:getFaction() and distance(Player, PayloadShip) < 2.5 * PayloadDistanceThreshold then
+    SafeOrder(ship, Player, "Attack")
+  -- if another enemy is close to payload, attack them
+  elseif closestEnemy ~= nil and closestEnemy:isValid() and distance(closestEnemy, PayloadShip) < 2.5 * PayloadDistanceThreshold then
+    SafeOrder(ship, closestEnemy, "Attack")
+  -- otherwise fly with the paylod
+  else
+    SafeOrder(ship, PayloadShip, "Fly in formation")
+  end
+end
+
+function OrdersContestedPayload(ship, closestEnemy, oppShipList)
+  -- if enemy player is close to payload, attack player
+  if ship:getFaction() ~= Player:getFaction() and distance(Player, PayloadShip) < 2.5 * PayloadDistanceThreshold then
+    SafeOrder(ship, Player, "Attack")
+  -- if ship is closer than closest enemy, fly with payload
+  elseif closestEnemy ~= nil and closestEnemy:isValid() and distance(ship, PayloadShip) < distance(closestEnemy, PayloadShip) then
+    SafeOrder(ship, PayloadShip, "Fly in formation")
+  -- Otherwise attack a random enemy, or fly with payload if there are none
+  elseif not SafeAttackRandom(ship, oppShipList) then
+    SafeOrder(ship, PayloadShip, "Fly in formation")
+  end
+end
+
+function OrdersNotInControl(ship, closestEnemy, oppShipList)
+  if not SafeOrder(ship, closestEnemy, "Attack") then
+    if not SafeAttackRandom(ship, oppShipList) then
+      SafeOrder(ship, PayloadShip, "Fly in formation")
+    end
+  end
+end
+
+function IssueOrders(shipList, oppShipList, closestEnemy)
   for _, ship in ipairs(shipList) do
-    IssueOneOrder(ship, ClosestEnemy, oppShipList)
+    -- Do nothing if we have captain's orders
+    if ship:getOrder() ~= "Attack" and ship:getOrder() ~= "Fly in formation" and ship:getOrder() ~= "Idle" then
+      return
+    end
+
+    -- Clean out stale attack orders
+    if ship:getOrder() == "Attack" and (ship:getOrderTarget() == nil or not ship:getOrderTarget():isValid()) then
+      ship:orderIdle() --Temporary until overriden below
+    end
+
+    -- Have been aggro'd
+    if ship.aggroTarget then
+      OrdersAggro(ship, closestEnemy, oppShipList)
+    -- Close to payload
+    elseif distance(ship, PayloadShip) < 2.5 * PayloadDistanceThreshold then
+      OrdersCloseToPayload(ship, closestEnemy, oppShipList)
+    -- Contested payload
+    elseif PayloadShip.controlledBy == nil then
+      OrdersContestedPayload(ship, closestEnemy, oppShipList)
+    -- In control of payload
+    elseif PayloadShip.controlledBy == ship:getFaction() then
+      SafeOrder(ship, PayloadShip, "Fly in formation")
+    -- Not in control of payload
+    elseif PayloadShip.controlledBy ~= ship:getFaction() then
+      OrdersNotInControl(ship, closestEnemy, oppShipList)
+    -- Debug catch-all
+    else
+      print('Unknown state in IssueOrder()')
+    end
   end
 end
 
@@ -587,6 +738,40 @@ function HandleNPCs()
 
   IssueOrders(KraylorShips, HumanShips, ClosestEnemies.HumanNavy.ship)
   IssueOrders(HumanShips, KraylorShips, ClosestEnemies.Kraylor.ship)
+end
+
+-- Function to spawn weapon pickup artifacts
+function SpawnWeaponPickups()
+  local weaponTypes = {"Homing", "Nuke", "Mine", "EMP", "HVLI"}
+  local edgeDistance = FieldSize / 2
+
+  for __ = 1, 5 do
+    for __, weaponType in ipairs(weaponTypes) do
+      local x, y = RandPositionInRadius(MidX, MidY, edgeDistance - 5000, edgeDistance - 30000, 0, 360)
+      local artifact = Artifact():setPosition(x, y):setDescriptions("Something to salvage", "It looks like a " .. weaponType):setScanningParameters(1, 1)
+      artifact:onCollision(function(self, collider)
+        -- "Note that the callback function must reference something global, otherwise you get an error like "??[convert<ScriptSimpleCallback>::param] Upvalue 1 of function is not a table..."
+        local __ = math.abs(0)
+        if collider.typeName == "PlayerSpaceship" then
+          collider:setWeaponStorage(weaponType, collider:getWeaponStorage(weaponType) + 1)
+          self:destroy()
+          collider:addToShipLog("Picked up a " .. weaponType .. " missile.", "green")
+          RemovePowerupArtifact(self)
+        end
+      end)
+      table.insert(PowerupArtifacts, artifact)
+    end
+  end
+end
+
+-- Function to remove a powerup artifact from the list
+function RemovePowerupArtifact(artifact)
+  for i, art in ipairs(PowerupArtifacts) do
+    if art == artifact then
+      table.remove(PowerupArtifacts, i)
+      break
+    end
+  end
 end
 
 -- Main update function
@@ -604,5 +789,4 @@ function update(delta)
     UpdateClosestEnemies()
     ClosestEnemyTimer = ClosestEnemyInterval
   end
-
 end
