@@ -1,4 +1,4 @@
--- Name: PushPayload
+-- Name: Push The Payload
 -- Description: Keep pushing the cart!
 ---
 ---Player ships: 1
@@ -6,31 +6,33 @@
 ---Author: Chris Sibbitt and Crew
 ---Created: Jan2025
 ---Feedback: USN Discord: https://discord.gg/7Kr32ezJFF
--- Type: Development
+-- Type: Replayable Mission
 -- Setting[WaveRandomNess]: Random variation in wave timing. Default is 0.25
 -- WaveRandomNess[0]: Random variation in wave timing. Default is 0.25
--- WaveRandomNess[0.1|Default]: Random variation in wave timing. Default is 0.25
+-- WaveRandomNess[0.1]: Random variation in wave timing. Default is 0.25
 -- WaveRandomNess[0.25|Default]: Random variation in wave timing. Default is 0.25
 -- WaveRandomNess[0.5]: Random variation in wave timing. Default is 0.25
 -- Setting[WaveTimer]: Display a wave timer in the Science/Ops console. Default is Disabled
 -- WaveTimer[Disabled|Default]: No visible wave timer
 -- WaveTimer[Enabled]: Display a wave timer in the Science/Ops console
--- Setting[Difficulty]: Difficulty level. Default is Normal
--- Difficulty[Easy]: Easy difficulty
--- Difficulty[Normal|Default]: Normal difficulty
--- Difficulty[Hard]: Hard difficulty
--- Difficulty[Nightmare]: Nightmare difficulty
+-- Setting[Resistance]: Resistance level. Default is Normal
+-- Resistance[Easy]: Easy
+-- Resistance[Normal|Default]: Normal
+-- Resistance[Hard]: Hard
+-- Resistance[Nightmare]: Nightmare
 -- Setting[TimeLimit]: Time limit before Kraylor victory. Default is 0 (no time limit)
 -- TimeLimit[0|Default]: No time limit
--- TimeLimit[60]: 60 minutes
--- TimeLimit[90]: 90 minutes
--- TimeLimit[120]: 120 minutes
--- Setting[FieldSize]: Distance between factions stations. Default is Medium
+-- TimeLimit[30]: 0.5 hour
+-- TimeLimit[60]: 1 hour
+-- TimeLimit[90]: 1.5 hours
+-- TimeLimit[120]: 2 hours
+-- TimeLimit[180]: 3 hours
+-- Setting[FieldSize]: Distance between factions stations. Affects difficulty and time. Default is Medium
 -- FieldSize[50000]: Tiny field size
--- FieldSize[100000]: Small field size
--- FieldSize[150000|Default]: Medium field size (Default)
--- FieldSize[240000]: Large field size
--- FieldSize[400000]: Extra Large field size
+-- FieldSize[75000]: Small field size
+-- FieldSize[100000|Default]: Medium field size (Default)
+-- FieldSize[150000]: Large field size
+-- FieldSize[200000]: Extra Large
 
 require("utils.lua")
 
@@ -40,7 +42,7 @@ Debug = false
 function init()
   TimeLimit = tonumber(getScenarioSetting("TimeLimit")) * 60
 
-  SetDifficulty()
+  SetResistance()
   SetFactionAggro()
 
   if Debug then
@@ -50,7 +52,7 @@ function init()
   end
 
   -- Create the faction stations
-  FactionStation = SpaceStation():setTemplate("Large Station"):setFaction("Human Navy"):setPosition(0, 0)
+  FactionStation = SpaceStation():setTemplate("Large Station"):setFaction("Human Navy"):setPosition(0, 0):setCallSign(_("mission", "Your Stn"))
   FactionStation.startX, FactionStation.startY = FactionStation:getPosition()
   local kx, ky
   if Debug then
@@ -59,7 +61,7 @@ function init()
   else
     kx, ky = RandPositionInRadius(0, 0, FieldSize, FieldSize, 0, 360)
   end
-  KraylorStation = SpaceStation():setTemplate("Large Station"):setFaction("Kraylor"):setPosition(kx, ky)
+  KraylorStation = SpaceStation():setTemplate("Large Station"):setFaction("Kraylor"):setPosition(kx, ky):setCallSign(_("mission", "Other Stn"))
   KraylorStation.startX, KraylorStation.startY = KraylorStation:getPosition()
 
   -- Calculate midpoint between stations
@@ -83,10 +85,10 @@ function init()
   if Debug then
     asteroidNum = 0
   end
-  placeRandomObjects(Asteroid, asteroidNum, 0.3, MidX, MidY, FieldSize / 15000, FieldSize / 15000)
+  placeRandomObjects(Asteroid, asteroidNum, 0.3, MidX, MidY, FieldSize / 10000, FieldSize / 10000)
 
   -- Spawn some mines
-  for __ = 1, Difficulty.minesToSpawn do
+  for __ = 1, Resistance.minesToSpawn do
     local x, y = RandPositionInRadius(MidX, MidY, FieldSize / 2 - 5000, FieldSize / 2 - 40000, 0, 360)
     Mine():setPosition(x, y)
   end
@@ -103,7 +105,7 @@ function init()
   if Debug then
     nebulaNum = 0
   end
-  placeRandomObjects(Nebula, nebulaNum, 0.3, MidX, MidY, FieldSize / 15000, FieldSize / 15000)
+  placeRandomObjects(Nebula, nebulaNum, 0.3, MidX, MidY, FieldSize / 10000, FieldSize / 10000)
 
   -- Spawn Rearm Stations
   HVLIStation = StationFactory("HVLI", 8)
@@ -130,7 +132,7 @@ function init()
 
   -- Initialize wave variables
   WaveSize = 1
-  WaveTimer = Difficulty.waveInterval
+  WaveTimer = Resistance.waveInterval
   GMWaveTimerUpdate = 1
   KraylorShips = {}
   HumanShips = {}
@@ -143,12 +145,9 @@ function init()
     Timer = 5
   }
 
-  -- Spawn the first wave immediately
-  SpawnWave()
-
   -- Create the player ship
   allowNewPlayerShips(false)
-  Player = PlayerSpaceship():setFaction("Human Navy"):setTemplate("Phobos M3P"):setCallSign("Player"):setPosition(fsX + 1000, fsY + 1000)
+  Player = PlayerSpaceship():setFaction("Human Navy"):setTemplate("Phobos M3P"):setCallSign("Screamin' Firehawk"):setPosition(fsX + 1000, fsY + 1000)
   Player:setJumpDrive(false)
   Player:setWarpDrive(true)
   Player:setRotation(45):commandTargetRotation(45)
@@ -163,41 +162,48 @@ function init()
   Player:setWeaponStorage("EMP", 0)
   Player:setWeaponStorage("HVLI", 4)
   Player:setLongRangeRadarRange(20000)
+
+  -- Send initial comms message
+  FactionStation:sendCommsMessage(Player, _("mission",[[
+  * Deliver the peace offering of flowers to the opposing station
+  * Get close and scan, don't let the enemy get control
+  * Foster peace with the golden faced grease monkeys
+  * Say sector of Payload?]]))
 end
 
---translate variations into a numeric Difficulty value
-function SetDifficulty()
-  local difficulty = getScenarioSetting("Difficulty")
-  Difficulty = {}
+function SetResistance()
+  local difficulty = getScenarioSetting("Resistance")
+  Resistance = {}
   if difficulty == "Easy" then
-    Difficulty.waveInterval = 180
-    Difficulty.maxWaveSize = 4
-    Difficulty.pickupArtifacts = 10
-    Difficulty.minesToSpawn = 0
-    Difficulty.turnoverWaveDelay = 50
-    Difficulty.idleWaveDelay = 120
+    Resistance.waveInterval = 180
+    Resistance.maxWaveSize = 4
+    Resistance.pickupArtifacts = 10
+    Resistance.minesToSpawn = 0
+    Resistance.turnoverWaveDelay = 180
+    Resistance.idleWaveDelay = 180
+  elseif difficulty == "Normal" then
+    Resistance.waveInterval = 120
+    Resistance.maxWaveSize = 5
+    Resistance.pickupArtifacts = 5
+    Resistance.minesToSpawn = 20
+    Resistance.turnoverWaveDelay = 120
+    Resistance.idleWaveDelay = 120 
   elseif difficulty == "Hard" then
-    Difficulty.waveInterval = 60
-    Difficulty.maxWaveSize = 8
-    Difficulty.pickupArtifacts = 2
-    Difficulty.minesToSpawn = 30
-    Difficulty.turnoverWaveDelay = 20
-    Difficulty.idleWaveDelay = 30
+    Resistance.waveInterval = 120
+    Resistance.maxWaveSize = 6
+    Resistance.pickupArtifacts = 2
+    Resistance.minesToSpawn = 30
+    Resistance.turnoverWaveDelay = 90
+    Resistance.idleWaveDelay = 90
   elseif difficulty == "Nightmare" then
-    Difficulty.waveInterval = 30
-    Difficulty.maxWaveSize = 10
-    Difficulty.pickupArtifacts = 0
-    Difficulty.minesToSpawn = 40
-    Difficulty.turnoverWaveDelay = 10
-    Difficulty.idleWaveDelay = 15
+    Resistance.waveInterval = 60
+    Resistance.maxWaveSize = 8
+    Resistance.pickupArtifacts = 0
+    Resistance.minesToSpawn = 40
+    Resistance.turnoverWaveDelay = 30
+    Resistance.idleWaveDelay = 45
   else
-    -- Default to Normal
-    Difficulty.waveInterval = 120
-    Difficulty.maxWaveSize = 6
-    Difficulty.pickupArtifacts = 5
-    Difficulty.minesToSpawn = 20
-    Difficulty.turnoverWaveDelay = 30
-    Difficulty.idleWaveDelay = 60
+    print("Unknown difficulty setting: " .. difficulty)
   end
 end
 
@@ -282,7 +288,7 @@ function SpawnWeaponPickups()
   local weaponTypes = {"Homing", "Nuke", "Mine", "EMP", "HVLI"}
   local edgeDistance = FieldSize / 2
 
-  for __ = 1, Difficulty.pickupArtifacts do
+  for __ = 1, Resistance.pickupArtifacts do
     for __, weaponType in ipairs(weaponTypes) do
       local x, y = RandPositionInRadius(MidX, MidY, edgeDistance - 5000, edgeDistance - 30000, 0, 360)
       local artifact = Artifact():setPosition(x, y):setDescriptions(_("artifacts", "Something to salvage"), _("artifacts", "It looks like a " .. weaponType)):setScanningParameters(1, 1)
@@ -462,7 +468,7 @@ function IssueOrders(shipList, oppShipList, closestEnemy)
     elseif PayloadShip.controlledBy ~= ship:getFaction() then
       OrdersNotInControl(ship, closestEnemy, oppShipList)
     -- Debug catch-all
-    elseif Debug then
+    else
       print('Unknown state in IssueOrder()')
     end
   end
@@ -663,7 +669,7 @@ function SpawnWave(faction)
       table.insert(HumanShips, human)
     end
   end
-  WaveSize = math.min(WaveSize + 1, Difficulty.maxWaveSize)
+  WaveSize = math.min(WaveSize + 1, Resistance.maxWaveSize)
 end
 
 function StationFactory(weaponType, price)
@@ -768,7 +774,7 @@ function HandleNPCWaves(delta)
 
   -- When capturing payload, give some time before next wave
   if PayloadShip.controlledBy == "Human Navy" and PayloadShip.LastControlledBy ~= "Human Navy" then
-    local timer = Difficulty.turnoverWaveDelay
+    local timer = Resistance.turnoverWaveDelay
     if rand > 0 then
       timer = timer + irandom(math.floor(-timer * rand), math.floor(timer * rand))
     end
@@ -778,7 +784,7 @@ function HandleNPCWaves(delta)
 
   -- Max time before next wave if no enemies and not pushing payload
   if #KraylorShips == 0 and PayloadShip.controlledBy == nil then
-    local timer = Difficulty.idleWaveDelay
+    local timer = Resistance.idleWaveDelay
     if rand > 0 then
       timer = timer + irandom(math.floor(-timer * rand), math.floor(timer * rand))
     end
@@ -810,7 +816,7 @@ function HandleNPCWaves(delta)
         Pickups.hintIndex = (Pickups.hintIndex % #Pickups.artifacts) + 1
       end
     end
-    WaveTimer = Difficulty.waveInterval
+    WaveTimer = Resistance.waveInterval
   end
 end
 
@@ -883,7 +889,7 @@ function UpdateClosestEnemies(delta)
 end
 
 function UpdateGMButtons(delta)
-  -- Update closest enemies every 5 seconds
+  -- Update GM buttons every 0.25s
   GMWaveTimerUpdate = GMWaveTimerUpdate - delta
   if GMWaveTimerUpdate > 0 then
     return
