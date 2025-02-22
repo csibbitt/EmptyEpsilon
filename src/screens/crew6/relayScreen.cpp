@@ -147,6 +147,13 @@ RelayScreen::RelayScreen(GuiContainer* owner, bool allow_comms)
     });
     launch_probe_button->setSize(GuiElement::GuiSizeMax, 50)->setVisible(my_spaceship && my_spaceship->getCanLaunchProbe());
 
+    // Center on ship
+    center_button = new GuiButton(option_buttons, "CENTER_ON_SHIP", tr("Center On Ship"), [this](){
+        if (my_spaceship)
+            radar->setViewPosition(my_spaceship->getPosition());
+    });
+    center_button->setSize(GuiElement::GuiSizeMax, 50);
+
     // Reputation display.
     info_reputation = new GuiKeyValueDisplay(option_buttons, "INFO_REPUTATION", 0.4f, tr("Reputation") + ":", "");
     info_reputation->setSize(GuiElement::GuiSizeMax, 40);
