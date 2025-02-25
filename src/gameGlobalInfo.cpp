@@ -1,3 +1,4 @@
+#include <cmath>
 #include <i18n.h>
 #include "menus/luaConsole.h"
 #include "gameGlobalInfo.h"
@@ -366,10 +367,12 @@ string getSectorName(glm::vec2 position)
     if (sector_y >= 0)
         if (sector_y < 26)
             y = string(char('A' + (sector_y)));
-        else
+        else if (sector_y < (26 * 26) + 26)
             y = string(char('A' - 1 + (sector_y / 26))) + string(char('A' + (sector_y % 26)));
+        else
+            y = string(char('A' - 1 + (sector_y / (26 * 26)))) + string(char('A' - 1 + (sector_y % (26 * 26) / 26))) + string(char('A' + (sector_y % 26)));
     else
-        y = string(char('z' + ((sector_y + 1) / 26))) + ((sector_y  % 26) == 0 ? "a" : string(char('z' + 1 + (sector_y  % 26))));
+        y = string(char('z' + ((sector_y + 1) / (26 * 26)))) + string(char('z' + ((sector_y + 1) % (26 * 26)) / 26)) + ((sector_y % 26) == 0 ? "a" : string(char('z' + 1 + (sector_y  % 26))));
     x = string(sector_x);
     return y + x;
 }
