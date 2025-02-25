@@ -1,3 +1,4 @@
+#include <cmath>
 #include <i18n.h>
 #include "menus/luaConsole.h"
 #include "gameGlobalInfo.h"
@@ -292,10 +293,12 @@ string getSectorName(glm::vec2 position)
     if (sector_y >= 0)
         if (sector_y < 26)
             y = string(char('A' + (sector_y)));
-        else
+        else if (sector_y < (26 * 26) + 26)
             y = string(char('A' - 1 + (sector_y / 26))) + string(char('A' + (sector_y % 26)));
+        else
+            y = string(char('A' - 1 + (sector_y / (26 * 26)))) + string(char('A' - 1 + (sector_y % (26 * 26) / 26))) + string(char('A' + (sector_y % 26)));
     else
-        y = string(char('z' + ((sector_y + 1) / 26))) + ((sector_y  % 26) == 0 ? "a" : string(char('z' + 1 + (sector_y  % 26))));
+        y = string(char('z' + ((sector_y + 1) / (26 * 26)))) + string(char('z' + ((sector_y + 1) % (26 * 26)) / 26)) + ((sector_y % 26) == 0 ? "a" : string(char('z' + 1 + (sector_y  % 26))));
     x = string(sector_x);
     return y + x;
 }
@@ -323,37 +326,43 @@ glm::vec2 sectorToXY(string sector)
         return glm::vec2(0,0);
     }
 
-    // Y axis is complicated
-    if(sector[0] >= char('A') && sector[1] >= char('A')){
-        // Case with two letters
-        char a1 = sector[0];
-        char a2 = sector[1];
-        try{
-            intpart = stoi(sector.substr(2));
-        }
-        catch(const std::exception& e){
-            return glm::vec2(0,0);
-        }
-        if(a1 > char('a')){
-            // Case with two lowercase letters (zz10) counting down towards the North
-            y = (((char('z') - a1) * 26) + (char('z') - a2 + 6)) * -sector_size; // 6 is the offset from F5 to zz5
-        }else{
-            // Case with two uppercase letters (AB20) counting up towards the South
-            y = (((a1 - char('A')) * 26) + (a2 - char('A') + 21)) * sector_size; // 21 is the offset from F5 to AA5
-        }
-    }else{
-        //Case with just one letter (A9/a9 - these are the same sector, as case only matters in the two-letter sectors)
-        char alphaPart = toupper(sector[0]);
-        try{
-            intpart = stoi(sector.substr(1));
-        }catch(const std::exception& e){
-            return glm::vec2(0,0);
-        }
-        y = (alphaPart - char('F')) * sector_size;
+    std::vector<char> letters;
+    size_t i = 0;
+    for (; i < sector.length(); i++)
+        if (isalpha(sector[i]))
+            letters.push_back(sector[i]);
+        else
+            break;
+    size_t num_letters = letters.size();
+
+    try{
+        intpart = stoi(sector.substr(i));
+    }catch(const std::exception& e){
+        return glm::vec2(0,0);
     }
+
     // X axis is simple
-    x = (intpart - 5) * sector_size; // 5 is the numeric component of the F5 origin
-    return glm::vec2(x, y);
+    x = (intpart - 5) * sector_size;  // 5 is the numeric component of the F5 origin
+
+    // Y axis has some subtleties
+    int mult = 1;
+    if(letters[0] >= char('a')){  // Lowercase is "North" of origin (starts at zz or zzz, never a single letter)
+        y = 6;  // offset from F5 origin to zz5
+        for(i = num_letters; i > 0; i--){
+            y += mult * (char('z') - tolower(letters[i-1]));
+            mult *= 26;
+        }
+        y *= -1;
+    }else{  // Uppercase is "South" of origin (starts at A and counts up towards AA and AAA)
+        y = (num_letters > 1) ? pow(26, (num_letters - 1)) + (26 * (num_letters - 2)) : 0;
+        y -= 5;  // offset from F5 origin to A5
+        for(i = num_letters; i > 0; i--){
+            y += mult * (letters[i-1] - toupper(char('A')));
+            mult *= 26;
+        }
+    }
+    y *= sector_size;
+    return glm::vec2(x,y);
 }
 
 int sectorToXY(lua_State* L)

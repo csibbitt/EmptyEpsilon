@@ -321,7 +321,8 @@ void GuiRadarView::drawSectorGrid(sp::RenderTarget& renderer)
         {
             float y = sector_y * sector_size;
             auto pos = worldToScreen(glm::vec2(x+(30/scale),y+(30/scale)));
-            renderer.drawText(sp::Rect(pos.x-10, pos.y-10, 20, 20), getSectorName(glm::vec2(sector_x * sector_size + sub_sector_size, sector_y * sector_size + sub_sector_size)), sp::Alignment::Center, 30, bold_font, color);
+            if (distance < 100000 or (static_cast<int>(sector_x) % 4 == 0 && static_cast<int>(sector_y) % 4 == 0))
+                renderer.drawText(sp::Rect(pos.x-10, pos.y-10, 20, 20), getSectorName(glm::vec2(sector_x * sector_size + sub_sector_size, sector_y * sector_size + sub_sector_size)), sp::Alignment::CenterLeft, 30, bold_font, color);
         }
     }
 
