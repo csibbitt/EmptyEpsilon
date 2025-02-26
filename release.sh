@@ -11,6 +11,6 @@ echo "Forked build w/ 10,000 entry ship's log. This is the ${ORIG_TAG} release w
 daid/SeriousProton#239
 daid#1938" |
 gh release create -d -R csibbitt/EmptyEpsilon -F - -t "${TITLETAG}" "${CSBUILD_TAG}" \
-'_build_win32/EmptyEpsilon.zip#Windows ZIP' \
+'_build_win64/EmptyEpsilon.zip#Windows ZIP' \
 '_build_android/EmptyEpsilon-armeabi-v7a.apk#Android arm APK' \
 '_build_android_64/EmptyEpsilon-arm64-v8a.apk#Android arm64 APK'
