@@ -9,9 +9,9 @@ ninja
 
 cd ..
 
-rm -Rf _build_win32
-mkdir _build_win32
-cd _build_win32
+rm -Rf _build_win64
+mkdir _build_win64
+cd _build_win64
 cmake .. -G Ninja -DCMAKE_TOOLCHAIN_FILE=../cmake/mingw.toolchain -DSERIOUS_PROTON_DIR=../../SeriousProton -DCMAKE_PROJECT_EmptyEpsilon_INCLUDE=./version.cmake
 ninja
 ninja package
