@@ -10,7 +10,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-"X-Generator: Poedit 3.4.2\n"
+"X-Generator: Poedit 3.5\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
 # Scenario name
@@ -32,8 +32,6 @@ msgstr ""
 "- Difficulté : Difficile (variable)\n"
 "- Vaisseaux joueurs : 1\n"
 "\n"
-"TRADUCTION EN COURS DE RELECTURE\n"
-"\n"
 "Mission : Vous devez vous échapper de prison et rentrer chez vous.\n"
 "\n"
 "Nécessite un vaisseau avec un équipage complet. L'ingénierie et la science "
@@ -44,8 +42,9 @@ msgstr ""
 "- Titre original : Escape\n"
 "- Auteur : Xansta (2019)\n"
 "- Traduction FR : Muerte (Mai 24)\n"
+"TRADUCTION EN COURS DE RELECTURE\n"
 "\n"
-"Communauté française et anglophone sur le Discord USN https://discord.gg/"
+"Communauté française et anglophone sur Discord USN https://discord.gg/"
 "TVxuxn7ZYW : feedback sur les scénarios, aide, sessions de jeu tous les we."
 
 # Scenario setting
@@ -225,7 +224,7 @@ msgctxt "defeat-msgMainscreen"
 msgid "You were destroyed. The Human Navy did not receive your Kraylor intel."
 msgstr ""
 "Vous avez été détruit.\n"
-"La Marine Humaine n'a pas pu recevoir vos informations sur les Kraylors."
+"La Marine humaine n'a pas pu recevoir vos informations sur les Kraylors."
 
 #: scripts/scenario_53_escape.lua:233
 msgctxt "repair-msgEngineer"
@@ -519,7 +518,7 @@ msgid ""
 msgstr ""
 "Les Frégates sont des vaisseaux d'une taille supérieure à celle des "
 "Chasseurs Stellaires. Ils nécessitent un équipage de 3 à 20 personnes.\n"
-"Pensez Firefly, Faucon Millenium, Esclave I (le navire de Boba Fett) dans "
+"Pensez Firefly, Faucon Millenium, Esclave I (le vaisseau de Boba Fett) dans "
 "Star Wars.\n"
 "\n"
 "Ils comportent généralement 2 sections de bouclier ou plus, mais rarement "
@@ -686,10 +685,10 @@ msgid ""
 "crews serving on the front lines or in well established areas under the "
 "protection of the Human Navy more generally."
 msgstr ""
-"Les vaisseaux Grand public sont souvent utilisés par les équipages de la FCU "
+"Les vaisseaux grand public sont souvent utilisés par les équipages de la FCU "
 "(Flotte Celeste Unifiée) servant sur les lignes de front ou, de manière plus "
 "générale, dans des zones bien établies sous la protection de la Marine "
-"Humaine."
+"humaine."
 
 #: scripts/scenario_53_escape.lua:410
 msgctxt "scienceDB"
@@ -841,6 +840,11 @@ msgstr ""
 msgctxt "ammo-comms"
 msgid "I need ordnance restocked"
 msgstr "Nous avons besoin de nous réapprovisionner en munitions"
+
+#: scripts/scenario_53_escape.lua:1343
+msgctxt "ammo-comms"
+msgid "What type of ordnance do you need?"
+msgstr "De quel type de munitions avez-vous besoin ?"
 
 #: scripts/scenario_53_escape.lua:1346
 msgctxt "ammo-comms"
@@ -1770,7 +1774,7 @@ msgstr ""
 #: scripts/scenario_53_escape.lua:2027
 msgctxt "ammo-comms"
 msgid "Ordnance available:"
-msgstr "Munitions disponibles :"
+msgstr "- Munitions disponibles :"
 
 #: scripts/scenario_53_escape.lua:2010
 msgctxt "ammo-comms"
@@ -1801,13 +1805,13 @@ msgstr "HVLIs"
 #, lua-format
 msgctxt "ammo-comms"
 msgid "%s %s@%i rep"
-msgstr "%s %s@%i rép"
+msgstr "%s %s (%i rép)"
 
 #: scripts/scenario_53_escape.lua:2021
 #, lua-format
 msgctxt "ammo-comms"
 msgid "%s, %s@%i rep"
-msgstr "%s, %s@%i rép"
+msgstr "%s, %s (%i rép)"
 
 #: scripts/scenario_53_escape.lua:2028
 #, lua-format
@@ -2074,7 +2078,7 @@ msgstr "A part ça, je n'ai pas connaissance de stations spécifiques."
 #, lua-format
 msgctxt "stationAssist-comms"
 msgid "Can you send a supply drop? (%d rep)"
-msgstr "Pouvez-vous nous envoyer une cargaison de ravitaillement ? (%d rep)"
+msgstr "Pouvez-vous nous envoyer une cargaison de ravitaillement ? (%d rép)"
 
 #: scripts/scenario_53_escape.lua:2272
 msgctxt "stationAssist-comms"
@@ -2183,7 +2187,7 @@ msgstr ", "
 #: scripts/scenario_53_escape.lua:2442 scripts/scenario_53_escape.lua:2629
 msgctxt "trade-comms"
 msgid "nothing"
-msgstr "Rien du tout."
+msgstr "rien du tout."
 
 #: scripts/scenario_53_escape.lua:2481 scripts/scenario_53_escape.lua:2677
 msgctxt "trade-comms"
@@ -2938,7 +2942,7 @@ msgid ""
 msgstr ""
 "Toutes nos félicitations !\n"
 "Vous avez su échapper aux griffes des Kraylors et transmis avec succès les "
-"données Kraylors à la Marine Humaine."
+"données Kraylors à la Marine humaine."
 
 #: scripts/scenario_53_escape.lua:3796
 msgctxt "ZoneLabelDescription-junk"
@@ -4082,10 +4086,6 @@ msgstr "Casse Boris"
 #~ msgstr ""
 #~ "Suite de l'école d'ingénierie Tandon commencée sur Terre au début du 21e "
 #~ "siècle."
-
-#~ msgctxt "ammo-comms"
-#~ msgid "What type of ordnance?"
-#~ msgstr "Quel genre de munitions ?"
 
 #~ msgctxt "trade-comms"
 #~ msgid "What do you want?"

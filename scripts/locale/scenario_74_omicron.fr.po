@@ -10,7 +10,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-"X-Generator: Poedit 3.4.2\n"
+"X-Generator: Poedit 3.5\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
 # Scenario name
@@ -294,7 +294,8 @@ msgstr "Vaisseau original"
 msgctxt "setting"
 msgid "Choose player ship outside of standard player ship list"
 msgstr ""
-"Vous pouvez choisir un vaisseau en dehors de la liste des vaisseaux standard."
+"Vous pouvez choisir un vaisseau en dehors de la liste des vaisseaux "
+"standards."
 
 msgctxt "Unique Ship"
 msgid "None"
@@ -328,7 +329,7 @@ msgid ""
 "Based on missile cruiser, reduced tubes, missiles and base warp speed to get "
 "beam weapons and HVLI"
 msgstr ""
-"Basé sur un Croiseur de missiles : missiles, tubes et vitesse lumière "
+"Basé sur un Croiseur lance-missiles : missiles, tubes et vitesse lumière "
 "réduits afin d'installer plus de faisceaux laser ainsi que des HVLI."
 
 msgctxt "Unique Ship"
@@ -1769,7 +1770,7 @@ msgstr ""
 #: scripts/scenario_74_omicron.lua:4081 scripts/scenario_74_omicron.lua:4105
 msgctxt "trade-comms"
 msgid "One repair crew should be getting here from their medical checkout in "
-msgstr "Une réparatrice devrait revenir de sa visite médicale dans"
+msgstr "Une réparatrice devrait revenir de sa visite médicale dans "
 
 #: scripts/scenario_74_omicron.lua:4086 scripts/scenario_74_omicron.lua:4091
 #, lua-format
@@ -3150,7 +3151,7 @@ msgid ""
 "The Exuari! They're getting closer! I'm adding waypoint %i into your system "
 "for our station. Please get here as soon as you can."
 msgstr ""
-"Les Exuaris ! Ils se rapprochent dangereusement ! J'ajoute le marqueur %i "
+"Les Éxuaris ! Ils se rapprochent dangereusement ! J'ajoute le marqueur %i "
 "sur votre radar pour vous indiquer l'emplacement de notre station. Venez dès "
 "que possible, je vous en supplie."
 
@@ -3320,7 +3321,7 @@ msgstr ", "
 #: scripts/scenario_74_omicron.lua:5314 scripts/scenario_74_omicron.lua:5835
 msgctxt "trade-comms"
 msgid "nothing"
-msgstr "Rien du tout."
+msgstr "rien du tout."
 
 #: scripts/scenario_74_omicron.lua:5329
 msgctxt "shipEnemy-comms"
@@ -3545,7 +3546,7 @@ msgstr ""
 #, lua-format
 msgctxt "shipAssist-comms"
 msgid "Defend WP %i"
-msgstr "Défendez le marqueur %i."
+msgstr "Défendez le marqueur %i"
 
 #: scripts/scenario_74_omicron.lua:6019
 #, lua-format
@@ -3997,7 +3998,7 @@ msgid ""
 "tubes and missiles. It's as if the Storm swallowed a Pirahna and grew gills. "
 "Expect to see missiles, lots of missiles"
 msgstr ""
-"Le Tourbillon, un autre croiseur d'artillerie lourde, provient du Tempête "
+"Le Tourbillon, un autre Croiseur d'artillerie lourde, provient du Tempête "
 "(Storm) auquel ont été ajoutés des tubes et missiles.\n"
 "\n"
 "C'est comme si le Tempête avait avalé un Piranha et développé des branchies. "
