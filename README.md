@@ -1,10 +1,17 @@
 # Forked build
 
-This is a forked build of EE with the following patches which are not part of the official build:
+This is a forked build of EE (currently the 'legacy' branch) with the following patches:
 
-* Improved ship log
-** https://github.com/daid/SeriousProton/pull/239
-** https://github.com/daid/EmptyEpsilon/pull/1938
+* Improved ship log (merged to upstream master)
+  * https://github.com/daid/SeriousProton/pull/239
+  * https://github.com/daid/EmptyEpsilon/pull/1938
+* Relay Button to center on ship (merged to upstream master)
+  * https://github.com/csibbitt/EmptyEpsilon/commit/f3484d3
+  * https://github.com/daid/EmptyEpsilon/pull/2298
+* Larger zoom limits on Relay, Spectator, and GM screens
+  * https://github.com/csibbitt/EmptyEpsilon/commit/6bfbc37
+* Three-letter sector names for huge maps
+  * https://github.com/csibbitt/EmptyEpsilon/commit/ad259acd
 
 # Original README
 ![EmptyEpsilon logo](https://raw.githubusercontent.com/daid/EmptyEpsilon/master/resources/logo_full.png)
