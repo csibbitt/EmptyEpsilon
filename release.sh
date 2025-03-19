@@ -1,9 +1,9 @@
 #!/bin/sh
 CSBUILD_TAG=EE-$(grep "VERSION " version.cmake | awk '{print $2}' | sed -e 's/)//')
+ORIG_TAG=EE-$(grep "VERSION " version.cmake | awk '{print $2}' | sed -e 's/-.*//')
 MAJOR=$(grep MAJOR version.cmake | awk '{print $2}' | sed -e 's/)//')
 MINOR=$(grep MINOR version.cmake | awk '{print $2}' | sed -e 's/)//')
 PATCH=$(grep PATCH version.cmake | awk '{print $2}' | sed -e 's/)//')
-ORIG_TAG=$(git tag | egrep "${MAJOR}\.${MINOR}\...$")
 TITLETAG="${MAJOR}${MINOR}${PATCH}"
 
 echo "Forked build w/ support for very large maps. This is the ${ORIG_TAG} release with the following additions:
