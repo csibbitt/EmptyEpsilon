@@ -18,10 +18,6 @@ class SinglePilotScreen : public GuiOverlay
 private:
     GuiOverlay* background_crosses;
 
-    GuiKeyValueDisplay* energy_display;
-    GuiKeyValueDisplay* heading_display;
-    GuiKeyValueDisplay* velocity_display;
-    GuiKeyValueDisplay* shields_display;
     GuiElement* warp_controls;
     GuiElement* jump_controls;
     GuiCombatManeuver* combat_maneuver;
@@ -31,6 +27,7 @@ private:
     GuiRotationDial* missile_aim;
     GuiMissileTubeControls* tube_controls;
     GuiToggleButton* lock_aim;
+    bool drag_rotate;
 public:
     SinglePilotScreen(GuiContainer* owner);
 

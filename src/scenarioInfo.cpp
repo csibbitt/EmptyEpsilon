@@ -3,6 +3,7 @@
 #include "preferenceManager.h"
 #include <i18n.h>
 #include <unordered_set>
+#include <chrono>
 
 static std::unique_ptr<i18n::Catalogue> locale;
 std::vector<ScenarioInfo> ScenarioInfo::cached_full_list;
@@ -29,13 +30,13 @@ ScenarioInfo::ScenarioInfo(string filename)
             line = line.substr(3).strip();
             value = value + "\n" + line;
         }else{
+            addKeyValue(key, value);
             line = line.substr(2).strip();
             if (line.find(":") < 0)
             {
                 key = "";
                 continue;
             }
-            addKeyValue(key, value);
             key = line.substr(0, line.find(":")).strip();
             value = line.substr(line.find(":") + 1).strip();
         }
@@ -152,6 +153,7 @@ const std::vector<ScenarioInfo>& ScenarioInfo::getScenarios()
 {
     if (cached_full_list.empty())
     {
+        auto start_time = std::chrono::steady_clock::now();
         // Fetch and sort all Lua files starting with "scenario_".
         std::vector<string> scenario_filenames = findResources("scenario_*.lua");
         std::sort(scenario_filenames.begin(), scenario_filenames.end());
@@ -160,6 +162,7 @@ const std::vector<ScenarioInfo>& ScenarioInfo::getScenarios()
 
         for(string filename : scenario_filenames)
             cached_full_list.emplace_back(filename);
+        LOG(Debug, "Get scenarios time: ", int(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start_time).count()), "ms");
     }
     return cached_full_list;
 }

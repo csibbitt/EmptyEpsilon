@@ -5,7 +5,7 @@
 #include "graphics/font.h"
 #include "Renderable.h"
 #include "postProcessManager.h"
-#include "config.h"
+
 
 extern glm::vec3 camera_position;
 extern float camera_yaw;
@@ -22,5 +22,6 @@ extern std::vector<RenderLayer*> window_render_layers;
 void returnToMainMenu(RenderLayer*);
 void returnToShipSelection(RenderLayer*);
 void returnToOptionMenu();
+std::unordered_map<string, string> loadScenarioSettingsFromPrefs();
 
 #endif//MAIN_H

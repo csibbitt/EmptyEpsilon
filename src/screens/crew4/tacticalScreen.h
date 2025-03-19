@@ -16,10 +16,6 @@ class TacticalScreen : public GuiOverlay
 private:
     GuiOverlay* background_crosses;
 
-    GuiKeyValueDisplay* energy_display;
-    GuiKeyValueDisplay* heading_display;
-    GuiKeyValueDisplay* velocity_display;
-    GuiKeyValueDisplay* shields_display;
     GuiElement* warp_controls;
     GuiElement* jump_controls;
 
@@ -28,6 +24,7 @@ private:
     GuiRotationDial* missile_aim;
     GuiMissileTubeControls* tube_controls;
     GuiToggleButton* lock_aim;
+    bool drag_rotate;
 public:
     TacticalScreen(GuiContainer* owner);
 
