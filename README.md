@@ -11,7 +11,7 @@ This is a forked build of EE (currently the 'legacy' branch) with the following 
 * Larger zoom limits on Relay, Spectator, and GM screens
   * https://github.com/csibbitt/EmptyEpsilon/commit/6bfbc37
 * Three-letter sector names for huge maps
-  * https://github.com/csibbitt/EmptyEpsilon/commit/ad259acd
+  * https://github.com/csibbitt/EmptyEpsilon/commit/35803a49
 
 # Original README
 ![EmptyEpsilon logo](https://raw.githubusercontent.com/daid/EmptyEpsilon/master/resources/logo_full.png)
