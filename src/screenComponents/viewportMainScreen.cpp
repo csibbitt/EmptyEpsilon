@@ -58,7 +58,7 @@ void GuiViewportMainScreen::onDraw(sp::RenderTarget& renderer)
         }
         else
         {
-            camera_position = camera_position * 0.9f + targetCameraPosition * 0.1f;
+            camera_position = camera_position * (0.9f - (0.1f * my_spaceship->current_warp / 2)) + targetCameraPosition * (0.1f + (0.1f * my_spaceship->current_warp / 2));
             camera_yaw += angleDifference(camera_yaw, target_camera_yaw) * 0.1f;
         }
     }
